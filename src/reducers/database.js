@@ -5,15 +5,13 @@ import * as RealEstate from "reducers/real-estate";
 import * as Cache from "cache";
 import * as Origin from "datastore/origin";
 import * as VirtualFileSystem from "datastore/virtual-file-system";
+import * as FilesAndFolders from "datastore/files-and-folders";
 import * as Tags from "datastore/tags";
+
 
 import * as SEDA from "seda";
 
-import { CSV } from "csv";
-import pick from "languages";
 
-
-const Path = require("path");
 
 const property_name = "database";
 
@@ -46,78 +44,20 @@ const getFfIdPath = id => state =>
   );
 
 const toJson = () => state => JSON.stringify(VirtualFileSystem.toJs(state));
-const str_list_2_header = pick({
-  fr:[
-    "",
-    "chemin",
-    "nom",
-    "poids (octet)",
-    "date de dernière modification",
-    "alias",
-    "commentaire",
-    "tags",
-    "fichier/répertoire",
-    "profondeur",
-  ],
-  en:[
-    "",
-    "path",
-    "name",
-    "size (octet)",
-    "last_modified",
-    "alias",
-    "comments",
-    "tags",
-    "file/folder",
-    "depth",
-  ],
-});
-const file_str = pick({
-  fr:"fichier",
-  en:"file",
-});
-const folder_str = pick({
-  fr:"répertoire",
-  en:"folder",
-});
+
 
 const toStrList2 = () => state => {
-  const ans = [str_list_2_header.slice()];
-  state.get("files_and_folders").forEach((ff, id) => {
-    if (id === "") {
-      return undefined;
-    }
-    const platform_independent_path = id;
-    const platform_dependent_path = id.split("/").join(Path.sep);
-    const name = ff.get("name");
-    const size = ff.get("size");
-    const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
-    const alias = ff.get("alias");
-    const comments = ff.get("comments");
-    const tags = state
-      .get("tags")
-      .filter(tag => tag.get("ff_ids").includes(id))
-      .reduce((acc, val) => acc.concat([val.get("name")]), []);
-    const children = ff.get("children");
-    let file_or_folder = folder_str;
-    if (children.size === 0) {
-      file_or_folder = file_str;
-    }
-    const depth = ff.get("depth");
+  const files_and_folders = state.get("files_and_folders");
+  const root_id = FilesAndFolders.getFfRootId();
+  const ff_id_list = FilesAndFolders.toFfidList(files_and_folders).filter(a=>a!=root_id);
+  const tags = state.get("tags");
 
-    ans.push([
-      "",
-      platform_dependent_path,
-      name,
-      size,
-      last_modified,
-      alias,
-      comments,
-      tags,
-      file_or_folder,
-      depth,
-    ]);
+  const ans = FilesAndFolders.toStrList2(ff_id_list, files_and_folders);
+
+  Tags.toStrList2(ff_id_list, files_and_folders, tags).forEach((a,i) => {
+    ans[i] = ans[i].concat(a);
   });
+
   return ans;
 };
 
