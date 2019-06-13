@@ -53,7 +53,7 @@ const toStrList2 = () => state => {
       "alias",
       "comments",
       "tags",
-      "is_file"
+      "file/folder"
     ]
   ];
   state.get("files_and_folders").forEach((ff, id) => {
@@ -71,7 +71,10 @@ const toStrList2 = () => state => {
       .filter(tag => tag.get("ff_ids").includes(id))
       .reduce((acc, val) => acc.concat([val.get("name")]), []);
     const children = ff.get("children");
-    const is_file = children.size === 0;
+    let file_or_folder = "folder";
+    if (children.size === 0) {
+      file_or_folder = "file";
+    }
 
     ans.push([
       "",
@@ -82,7 +85,7 @@ const toStrList2 = () => state => {
       alias,
       comments,
       tags,
-      is_file
+      file_or_folder
     ]);
   });
   return ans;
