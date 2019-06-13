@@ -6,7 +6,7 @@ import * as Loop from "test/loop";
 const arbitrary = () =>
   Arbitrary.immutableList(() => Arbitrary.immutableList(Arbitrary.string));
 
-const cell_separator = ",";
+const cell_separator = ";";
 const line_separator = "\n";
 
 const str2Cell = a => `"${a}"`;
