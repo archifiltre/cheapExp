@@ -53,7 +53,8 @@ const toStrList2 = () => state => {
       "alias",
       "comments",
       "tags",
-      "file/folder"
+      "file/folder",
+      "depth",
     ]
   ];
   state.get("files_and_folders").forEach((ff, id) => {
@@ -75,6 +76,7 @@ const toStrList2 = () => state => {
     if (children.size === 0) {
       file_or_folder = "file";
     }
+    const depth = ff.get("depth");
 
     ans.push([
       "",
@@ -85,7 +87,8 @@ const toStrList2 = () => state => {
       alias,
       comments,
       tags,
-      file_or_folder
+      file_or_folder,
+      depth,
     ]);
   });
   return ans;
