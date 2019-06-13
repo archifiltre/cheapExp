@@ -286,6 +286,7 @@ const str_list_2_header = pick({
     "chemin",
     "longueur du chemin",
     "nom",
+    "extension",
     "poids (octet)",
     "date de dernière modification",
     "alias",
@@ -298,6 +299,7 @@ const str_list_2_header = pick({
     "path",
     "path length",
     "name",
+    "extension",
     "size (octet)",
     "last_modified",
     "alias",
@@ -327,6 +329,7 @@ export const toStrList2 = (ff_id_list, ffs) => {
     const platform_dependent_path = id.split("/").join(Path.sep);
     const path_length = platform_dependent_path.length;
     const name = ff.get("name");
+    const extension = Path.extname(name);
     const size = ff.get("size");
     const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
     const alias = ff.get("alias");
@@ -343,6 +346,7 @@ export const toStrList2 = (ff_id_list, ffs) => {
       platform_dependent_path,
       path_length,
       name,
+      extension,
       size,
       last_modified,
       alias,
