@@ -10,6 +10,8 @@ import * as Tags from "datastore/tags";
 import * as SEDA from "seda";
 
 import { CSV } from "csv";
+import pick from "languages";
+
 
 const Path = require("path");
 
@@ -44,21 +46,43 @@ const getFfIdPath = id => state =>
   );
 
 const toJson = () => state => JSON.stringify(VirtualFileSystem.toJs(state));
+const str_list_2_header = pick({
+  fr:[
+    "",
+    "chemin",
+    "nom",
+    "poids (octet)",
+    "date de dernière modification",
+    "alias",
+    "commentaire",
+    "tags",
+    "fichier/répertoire",
+    "profondeur",
+  ],
+  en:[
+    "",
+    "path",
+    "name",
+    "size (octet)",
+    "last_modified",
+    "alias",
+    "comments",
+    "tags",
+    "file/folder",
+    "depth",
+  ],
+});
+const file_str = pick({
+  fr:"fichier",
+  en:"file",
+});
+const folder_str = pick({
+  fr:"répertoire",
+  en:"folder",
+});
+
 const toStrList2 = () => state => {
-  const ans = [
-    [
-      "",
-      "path",
-      "name",
-      "size (octet)",
-      "last_modified",
-      "alias",
-      "comments",
-      "tags",
-      "file/folder",
-      "depth",
-    ]
-  ];
+  const ans = [str_list_2_header.slice()];
   state.get("files_and_folders").forEach((ff, id) => {
     if (id === "") {
       return undefined;
@@ -75,9 +99,9 @@ const toStrList2 = () => state => {
       .filter(tag => tag.get("ff_ids").includes(id))
       .reduce((acc, val) => acc.concat([val.get("name")]), []);
     const children = ff.get("children");
-    let file_or_folder = "folder";
+    let file_or_folder = folder_str;
     if (children.size === 0) {
-      file_or_folder = "file";
+      file_or_folder = file_str;
     }
     const depth = ff.get("depth");
 
