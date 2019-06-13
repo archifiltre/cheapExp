@@ -38,8 +38,8 @@ const askBeforeLeaving = () => {
     let yes;
     if (language === 'fr') {
       title = 'Bye bye !';
-      message = 'Êtes-vous sure de vouloir quitter ?';
-      detail = 'Toutes les données qui n\'ont pas étaient sauvegardées seront perdu définitivement !';
+      message = 'Êtes-vous sûr.e de vouloir quitter ?';
+      detail = 'Toutes les données qui n\'ont pas été sauvegardées seront perdues définitivement !';
       no = 'non';
       yes = 'oui'
     } else {
