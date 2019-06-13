@@ -1,7 +1,9 @@
 import React from "react";
 
 import * as ObjectUtil from "util/object-util";
+import { openWithDefaultApp } from "util/file-sys-util";
 import { RIEInput, RIETextArea, RIETags } from "riek";
+const Path = require("path");
 
 import TagsCell from "components/report-cell-tags";
 import CommentsCell from "components/report-cell-comments";
@@ -57,14 +59,23 @@ const Icon = props => {
   const is_folder = props.is_folder;
   const fillColor = props.fillColor;
   const node_id = props.node_id;
+  const original_path = props.original_path;
 
   let class_name;
   let color;
+  let icon_click_handler;
+
   if (placeholder) {
     class_name = "fi-page-multiple";
     color = Color.placeholder();
-  } else {
+    icon_click_handler = (e) => {}
+  }
+  else {
     color = fillColor(node_id);
+
+    let full_path = Path.dirname(original_path) + node_id;
+    icon_click_handler = (e) => {console.log("opening"); openWithDefaultApp(full_path);}
+
     if (is_folder) {
       class_name = "fi-folder";
     } else {
@@ -73,7 +84,7 @@ const Icon = props => {
   }
 
   return (
-    <div style={{ marginTop: "-1em", marginBottom: "-1em" }}>
+    <div style={{ marginTop: "-1em", marginBottom: "-1em" }} onClick={icon_click_handler}>
       <i className={class_name} style={{ fontSize: "3em", color }} />
     </div>
   );
@@ -184,6 +195,7 @@ const Report = props => {
         is_folder={is_folder}
         fillColor={props.fillColor}
         node_id={props.node_id}
+        original_path={props.original_path}
       />
     );
 
@@ -277,6 +289,8 @@ export default function ReportApiToProps(props) {
   const icicle_state = api.icicle_state;
   const database = api.database;
 
+  const original_path = database.getOriginalPath();
+
   const sequence = icicle_state.sequence();
   const getFfByFfId = database.getFfByFfId;
 
@@ -298,6 +312,7 @@ export default function ReportApiToProps(props) {
     {
       isFocused: icicle_state.isFocused(),
       isLocked: icicle_state.isLocked(),
+      original_path,
       node,
       node_id,
       tag_ids,

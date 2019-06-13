@@ -1,12 +1,22 @@
 const Fs = require("fs");
 const Path = require("path");
+const { shell } = require('electron');
 
 const TarFs = require("tar-fs");
 const Zlib = require("zlib");
 const TarStream = require("tar-stream");
-import FileSaver from "file-saver";
+const FileSaver = require("file-saver");
 
-export function save(name, json) {
+
+export const openWithDefaultApp = (path) => {
+  // Should check if path exists and handle otherwise via hook
+  // Should check if path is platform-dependent
+  // Should check if path is folder or file
+  console.log(path)
+  // Shell.openItem(path)
+}
+
+export const save = (name, json) => {
   const blob = new Blob([json], { type: "text/plain;charset=utf-8" });
   FileSaver.saveAs(blob, name);
 }
