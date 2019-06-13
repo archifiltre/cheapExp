@@ -9,6 +9,8 @@ import * as Tags from "datastore/tags";
 
 import * as SEDA from "seda";
 
+import { CSV } from "csv";
+
 const property_name = "database";
 
 const initialState = () => VirtualFileSystem.make(Origin.empty());
@@ -61,7 +63,7 @@ const toStrList2 = () => state => {
     const path = id;
     const name = ff.get("name");
     const size = ff.get("size");
-    const last_modified = ff.get("last_modified_max");
+    const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
     const alias = ff.get("alias");
     const comments = ff.get("comments");
     const tags = state

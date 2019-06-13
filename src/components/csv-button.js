@@ -2,7 +2,7 @@ import React from "react";
 
 import { mkB } from "components/button";
 
-import * as Csv from "csv";
+import { CSV } from "csv";
 import { save, makeNameWithExt } from "save";
 
 import pick from "languages";
@@ -19,7 +19,7 @@ const CsvButton = props => {
   return mkB(
     () => {
       console.log("to csv");
-      save(name(), Csv.toStr(getStrList2()));
+      save(name(), CSV.toStr(getStrList2()));
     },
     label,
     true,
