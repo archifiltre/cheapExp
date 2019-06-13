@@ -11,6 +11,8 @@ import * as SEDA from "seda";
 
 import { CSV } from "csv";
 
+const Path = require("path");
+
 const property_name = "database";
 
 const initialState = () => VirtualFileSystem.make(Origin.empty());
@@ -61,7 +63,8 @@ const toStrList2 = () => state => {
     if (id === "") {
       return undefined;
     }
-    const path = id;
+    const platform_independent_path = id;
+    const platform_dependent_path = id.split("/").join(Path.sep);
     const name = ff.get("name");
     const size = ff.get("size");
     const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
@@ -80,7 +83,7 @@ const toStrList2 = () => state => {
 
     ans.push([
       "",
-      path,
+      platform_dependent_path,
       name,
       size,
       last_modified,
