@@ -360,3 +360,43 @@ export const toStrList2 = (ff_id_list, ffs) => {
 
   return ans;
 }
+
+
+export const toResipStrList2 = (ff_id_list, ffs) => {
+  const header = ["File", "Content.DescriptionLevel", "Content.Title"];
+  const ans = [header];
+  const mapFfidToStrList = {};
+
+  ffs.forEach((ff, id) => {
+    if (id === "") {
+      return undefined;
+    }
+    // const line_id = generateRandomString(40);
+    const platform_independent_path = id;
+    // const platform_dependent_path = id.split("/").join(Path.sep);
+    const platform_dependent_path = id.split("/").join("\\");
+    // const path_length = platform_dependent_path.length;
+    const title = ff.get("name");
+    // const extension = Path.extname(name);
+    // const size = ff.get("size");
+    // const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
+    // const alias = ff.get("alias");
+    // const comments = ff.get("comments");
+    const children = ff.get("children");
+    let description_level = "RecordGrp";
+    if (children.size === 0) {
+      description_level = "Item";
+    }
+    // const depth = ff.get("depth");
+
+    mapFfidToStrList[id] = [
+      platform_dependent_path,
+      description_level,
+      title,
+    ];
+  });
+
+  ff_id_list.forEach(id=>ans.push(mapFfidToStrList[id]));
+
+  return ans;
+}

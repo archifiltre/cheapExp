@@ -10,11 +10,15 @@ const cell_separator = ";";
 const line_separator = "\n";
 
 const str2Cell = a => `"${a}"`;
-const list2Line = a => {
-  return a.map(str2Cell).join(cell_separator) + line_separator;
+const list2Line = withDoubleQuote => a => {
+  let mapper = a => a.replace(/;/g,'');
+  if (withDoubleQuote) {
+    mapper = str2Cell;
+  }
+  return a.map(mapper).join(cell_separator) + line_separator;
 };
-const toStr = a => {
-  return a.map(list2Line).join("");
+const toStr = withDoubleQuote => a => {
+  return a.map(list2Line(withDoubleQuote)).join("");
 };
 
 const fromStr = a => {
@@ -29,7 +33,7 @@ const fromStr = a => {
 };
 
 const line2List = a => {
-  const re = new RegExp(`^"|","|"${line_separator}$`);
+  const re = new RegExp(`^"|"${cell_separator}"|"${line_separator}$`);
   return List(a.split(re).slice(1, -1));
 };
 

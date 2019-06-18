@@ -6,14 +6,17 @@ import * as Arbitrary from "test/arbitrary";
 import { CSV } from "csv";
 
 describe("csv", function() {
+  const arbitraryBool = () => Math.random() <= 0.5
   Loop.equal("(line2List . list2Line) a", () => {
     const a = Arbitrary.immutableList(Arbitrary.string);
-    return [CSV.line2List(CSV.list2Line(a)), a];
+    const withDoubleQuote = true;
+    return [CSV.line2List(CSV.list2Line(withDoubleQuote)(a)), a];
   });
 
   Loop.equal("(fromStr . toStr) a", () => {
     const a = CSV.arbitrary();
-    return [CSV.fromStr(CSV.toStr(a)).toJS(), a.toJS()];
+    const withDoubleQuote = true;
+    return [CSV.fromStr(CSV.toStr(withDoubleQuote)(a)).toJS(), a.toJS()];
   });
 
   it("leftPadInt", () => {
