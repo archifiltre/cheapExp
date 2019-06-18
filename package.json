@@ -5,7 +5,7 @@
   "main": "electron/index.js",
   "scripts": {
     "test": "env NODE_PATH=$NODE_PATH:$PWD/src mocha --require babel-register",
-    "testAll": "TEST=true yarn test ./src/**/*.test.js",
+    "testAll": "TEST=true yarn test './src/**/*.test.js'",
     "buildDev": "webpack --progress --mode development",
     "buildProd": "webpack --progress --mode production",
     "devServer": "webpack-dev-server --mode development",
