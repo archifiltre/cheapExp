@@ -52,8 +52,6 @@ const toStrList2 = () => state => {
   const ff_id_list = FilesAndFolders.toFfidList(files_and_folders).filter(a=>a!=root_id);
   const tags = state.get("tags");
 
-  return FilesAndFolders.toResipStrList2(ff_id_list, files_and_folders); /////////////////////
-
   const ans = FilesAndFolders.toStrList2(ff_id_list, files_and_folders);
 
   Tags.toStrList2(ff_id_list, files_and_folders, tags).forEach((a,i) => {

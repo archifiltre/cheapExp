@@ -147,3 +147,12 @@ app.on('quit', () => {
 app.on('will-navigate', () => {
   console.log('will-navigate')
 });
+
+
+
+
+const { ipcMain } = require('electron');
+ipcMain.on('open-devtools', (event, arg) => {
+  win.webContents.openDevTools();
+})
+

@@ -14,7 +14,7 @@ const CsvButton = props => {
   const database = api.database;
   const getStrList2 = database.toStrList2;
   const getSessionName = database.getSessionName;
-  const withDoubleQuote = false; /////////////////////
+  const withDoubleQuote = true;
 
   const name = () => makeNameWithExt(getSessionName(), "csv");
   return mkB(

@@ -1,6 +1,8 @@
 import "foundation-sites";
 import "./css/index.scss";
 
+import { SecretDevtools } from "secret-devtools";
+
 import React from "react";
 
 import ReactDOM from "react-dom";
@@ -19,6 +21,8 @@ import { Store } from "reducers/store";
 
 import version from "version";
 import pick from "languages";
+
+SecretDevtools.enable();
 
 document.title = pick({
   en: "icicle v" + version + " - archifiltre",
