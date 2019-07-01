@@ -2,49 +2,58 @@ import * as Arbitrary from "test/arbitrary";
 import * as Loop from "test/loop";
 
 import { generateRandomString } from "random-gen";
-import * as RecordUtil from "util/record-util";
 import * as ObjectUtil from "util/object-util";
+import { Record } from "immutable";
 
 import { List, Map, Set } from "immutable";
 
-const tagFactory = RecordUtil.createFactory(
-  {
-    name: "",
-    ff_ids: Set()
-  },
-  {
-    toJs: a =>
-      ObjectUtil.compose(
-        {
-          ff_ids: a.ff_ids.toArray()
-        },
-        a
-      ),
-    fromJs: a =>
-      ObjectUtil.compose(
-        {
-          ff_ids: Set(a.ff_ids)
-        },
-        a
-      )
-  }
-);
+const tagFactory = Record({
+  name: "",
+  ff_ids: Set(),
 
-const derivedFactory = RecordUtil.createFactory(
-  {
-    size: 0
-  },
-  {
-    toJs: a => a,
-    fromJs: a => a
+  size: 0,
+})
+
+const tagToJs = (a) => {
+  return {
+    name: a.get("name"),
+    ff_ids: a.get("ff_ids").toArray(),
+
+    size: a.get("size"),
   }
-);
+}
+
+const tagFromJs = (a) => {
+  return tagFactory({
+    name: a.name,
+    ff_ids: Set(a.ff_ids),
+
+    size: a.size,
+  })
+}
+
 
 export const create = tagFactory;
 
 const makeId = () => generateRandomString(40);
 
-export const empty = Map;
+export const empty = () => {
+  return Map()
+};
+
+export const toJs = (a) => {
+  a = a.map(tagToJs);
+  a = a.toObject();
+
+  return a;
+};
+
+export const fromJs = (a) => {
+  a = Map(a);
+  a = a.map(tagFromJs);
+
+  return a;
+}
 
 const insert = (id, tag, tags) => {
   const already_id = tags.reduce((acc, val, i) => {
@@ -117,12 +126,7 @@ const computeDerived = (ffs, tags) => {
   tags = tags.map(tag => {
     const ids = List(tag.get("ff_ids"));
 
-    tag = RecordUtil.compose(
-      derivedFactory({
-        size: reduceToSize(filterChildren(sortBySize(ids)))
-      }),
-      tag
-    );
+    tag = tag.set("size", reduceToSize(filterChildren(sortBySize(ids))))
 
     return tag;
   });
@@ -137,25 +141,6 @@ export const update = (ffs, tags) => {
 
   return tags;
 };
-
-const toAndFromJs = factory => [
-  a => {
-    a = a.map(factory.toJs);
-    a = a.toObject();
-
-    return a;
-  },
-  a => {
-    a = Map(a);
-    a = a.map(factory.fromJs);
-
-    return a;
-  }
-];
-
-export const [toJs, fromJs] = toAndFromJs(
-  RecordUtil.composeFactory(derivedFactory, tagFactory)
-);
 
 
 const toNameList = (tags) => {

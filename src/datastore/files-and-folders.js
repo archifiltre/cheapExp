@@ -2,7 +2,7 @@ import * as Arbitrary from "test/arbitrary";
 
 import * as ArrayUtil from "util/array-util";
 import * as ListUtil from "util/list-util";
-import * as RecordUtil from "util/record-util";
+import { Record } from "immutable";
 
 import * as ObjectUtil from "util/object-util";
 
@@ -15,33 +15,101 @@ import { CSV } from "csv";
 import pick from "languages";
 const Path = require("path");
 
+const fileOrFolderFactory = Record({
+  name: "",
+  alias: "",
+  comments: "",
+  children: List(),
+  file_size: 0,
+  file_last_modified: 0,
 
-const fileOrFolderFactory = RecordUtil.createFactory(
-  {
-    name: "",
-    alias: "",
-    comments: "",
-    children: List(),
-    file_size: 0,
-    file_last_modified: 0
-  },
-  {
-    toJs: a =>
-      ObjectUtil.compose(
-        {
-          children: a.children.toArray()
-        },
-        a
-      ),
-    fromJs: a =>
-      ObjectUtil.compose(
-        {
-          children: List(a.children)
-        },
-        a
-      )
+
+  size: 0,
+  last_modified_max: 0,
+  last_modified_list: List(),
+  last_modified_min: Number.MAX_SAFE_INTEGER,
+  last_modified_median: null,
+  last_modified_average: null,
+  depth: 0,
+  nb_files: 0,
+  sort_by_size_index: List(),
+  sort_by_date_index: List(),
+})
+
+const reinitDerivatedData = (a) => {
+  a = a.set("size", 0);
+  a = a.set("last_modified_max", 0);
+  a = a.set("last_modified_list", List());
+  a = a.set("last_modified_min", Number.MAX_SAFE_INTEGER);
+  a = a.set("last_modified_median", null);
+  a = a.set("last_modified_average", null);
+  a = a.set("depth", 0);
+  a = a.set("nb_files", 0);
+  a = a.set("sort_by_size_index", List());
+  a = a.set("sort_by_date_index", List());
+
+  return a;
+}
+
+const copyDerivatedData = (fromA, toB) => {
+  toB = toB.set("size", fromA.get("size"));
+  toB = toB.set("last_modified_max", fromA.get("last_modified_max"));
+  toB = toB.set("last_modified_list", fromA.get("last_modified_list"));
+  toB = toB.set("last_modified_min", fromA.get("last_modified_min"));
+  toB = toB.set("last_modified_median", fromA.get("last_modified_median"));
+  toB = toB.set("last_modified_average", fromA.get("last_modified_average"));
+  toB = toB.set("depth", fromA.get("depth"));
+  toB = toB.set("nb_files", fromA.get("nb_files"));
+  toB = toB.set("sort_by_size_index", fromA.get("sort_by_size_index"));
+  toB = toB.set("sort_by_date_index", fromA.get("sort_by_date_index"));
+
+  return toB;
+}
+
+const fileOrFolderToJs = (a) => {
+  return {
+    name: a.get("name"),
+    alias: a.get("alias"),
+    comments: a.get("comments"),
+    children: a.get("children").toArray(),
+    file_size: a.get("file_size"),
+    file_last_modified: a.get("file_last_modified"),
+
+    size: a.get("size"),
+    last_modified_max: a.get("last_modified_max"),
+    last_modified_list: a.get("last_modified_list").toArray(),
+    last_modified_min: a.get("last_modified_min"),
+    last_modified_median: a.get("last_modified_median"),
+    last_modified_average: a.get("last_modified_average"),
+    depth: a.get("depth"),
+    nb_files: a.get("nb_files"),
+    sort_by_size_index: a.get("sort_by_size_index").toArray(),
+    sort_by_date_index: a.get("sort_by_date_index").toArray(),
   }
-);
+}
+
+const fileOrFolderFromJs = (a) => {
+  return fileOrFolderFactory({
+    name: a.name,
+    alias: a.alias,
+    comments: a.comments,
+    children: List(a.children),
+    file_size: a.file_size,
+    file_last_modified: a.file_last_modified,
+
+    size: a.size,
+    last_modified_max: a.last_modified_max,
+    last_modified_list: List(a.last_modified_list),
+    last_modified_min: a.last_modified_min,
+    last_modified_median: a.last_modified_median,
+    last_modified_average: a.last_modified_average,
+    depth: a.depth,
+    nb_files: a.nb_files,
+    sort_by_size_index: List(a.sort_by_size_index),
+    sort_by_date_index: List(a.sort_by_date_index),
+  })
+}
+
 
 export const ff = a => {
   const mapper = ([file, path]) => {
@@ -84,6 +152,22 @@ export const empty = () =>
     [getFfRootId()]: fileOrFolderFactory()
   });
 
+
+export const toJs = (a) => {
+  a = a.map(fileOrFolderToJs);
+  a = a.toObject();
+  return a;
+}
+
+export const fromJs = (a) => {
+  a = Map(a);
+  a = a.map(fileOrFolderFromJs);
+  return a;
+}
+
+
+
+
 export const merge = (a, b) => {
   const merger = (oldVal, newVal) => {
     oldVal = oldVal.update("children", b =>
@@ -106,7 +190,7 @@ const reduce = (reducer, m) => {
     return ans;
   };
 
-  return [rec(""), m];
+  return [rec(getFfRootId()), m];
 };
 
 const dive = (diver, first_ans, m) => {
@@ -153,40 +237,6 @@ export const arbitrary = () => {
   });
 };
 
-const derivedFactory = RecordUtil.createFactory(
-  {
-    size: 0,
-    last_modified_max: 0,
-    last_modified_list: List(),
-    last_modified_min: Number.MAX_SAFE_INTEGER,
-    last_modified_median: null,
-    last_modified_average: null,
-    depth: 0,
-    nb_files: 0,
-    sort_by_size_index: List(),
-    sort_by_date_index: List()
-  },
-  {
-    toJs: a =>
-      ObjectUtil.compose(
-        {
-          last_modified_list: a.last_modified_list.toArray(),
-          sort_by_size_index: a.sort_by_size_index.toArray(),
-          sort_by_date_index: a.sort_by_date_index.toArray()
-        },
-        a
-      ),
-    fromJs: a =>
-      ObjectUtil.compose(
-        {
-          last_modified_list: List(a.last_modified_list),
-          sort_by_size_index: List(a.sort_by_size_index),
-          sort_by_date_index: List(a.sort_by_date_index)
-        },
-        a
-      )
-  }
-);
 
 const mergeDerived = (a, b) => {
   b = b.update("size", b => b + a.get("size"));
@@ -220,32 +270,30 @@ const sortChildren = (children_ans_array, a) => {
 };
 
 export const computeDerived = m => {
-  m = m.map(fileOrFolderFactory);
+  m = m.map(reinitDerivatedData)
 
   const reducer = ([children_ans_array, node]) => {
-    let ans;
     if (children_ans_array.length === 0) {
       const flm = node.get("file_last_modified");
       const size = node.get("file_size");
-      ans = derivedFactory({
-        size,
-        last_modified_max: flm,
-        last_modified_list: List.of(flm),
-        last_modified_min: flm,
-        last_modified_median: flm,
-        last_modified_average: flm,
-        nb_files: 1
-      });
+
+      node = node.set("size", size);
+      node = node.set("last_modified_max", flm);
+      node = node.set("last_modified_list", List.of(flm));
+      node = node.set("last_modified_min", flm);
+      node = node.set("last_modified_median", flm);
+      node = node.set("last_modified_average", flm);
+      node = node.set("nb_files", 1);
+
     } else {
-      ans = children_ans_array.reduce((acc, val) => mergeDerived(val, acc));
+      let ans = children_ans_array.reduce((acc, val) => mergeDerived(val, acc));
       ans = afterMergeDerived(ans);
       ans = sortChildren(children_ans_array, ans);
+
+      node = copyDerivatedData(ans, node)
     }
-    node = RecordUtil.compose(
-      ans,
-      node
-    );
-    return [ans, node];
+
+    return [node, node];
   };
   let [_, next_m] = reduce(reducer, m);
 
@@ -258,24 +306,6 @@ export const computeDerived = m => {
 
   return next_m;
 };
-
-const toAndFromJs = factory => [
-  a => {
-    a = a.map(factory.toJs);
-    a = a.toObject();
-    return a;
-  },
-  a => {
-    a = Map(a);
-    a = a.map(factory.fromJs);
-    return a;
-  }
-];
-
-export const [toJs, fromJs] = toAndFromJs(
-  RecordUtil.composeFactory(derivedFactory, fileOrFolderFactory)
-);
-
 
 export const toFfidList = a => a.keySeq().toArray();
 
