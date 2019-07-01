@@ -2,8 +2,10 @@ import * as Arbitrary from "test/arbitrary";
 
 
 const setSize = (size, a) => a[0].size = size
+const getSize = (a) => a[0].size
 
 const setLastModified = (last_modified, a) => a[0].last_modified = last_modified
+const getLastModified = (a) => a[0].last_modified
 
 const setPath = (path, a) => a[1] = path
 const getPath = (a) => a[1]
@@ -16,7 +18,7 @@ const empty = () => {
   setPath("/", a);
 
   return a;
-}
+};
 
 const create = (size, last_modified, path) => {
   const a = empty();
@@ -26,7 +28,7 @@ const create = (size, last_modified, path) => {
   setPath(path, a);
 
   return a;
-}
+};
 
 const arbitrary = () => {
   const arbitraryPath = () => {
@@ -42,7 +44,7 @@ const arbitrary = () => {
   setPath(arbitraryPath(), a);
 
   return a;
-}
+};
 
 const canBeOnTheSameFileSystem = (a,b) => {
   const a_path = getPath(a);
@@ -74,5 +76,8 @@ export const OriginFileElem = {
   canBeOnTheSameFileSystem,
   create,
   compare,
+  getPath,
+  getSize,
+  getLastModified,
 }
 

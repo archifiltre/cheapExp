@@ -36,10 +36,15 @@ const sort = (a) => {
   a.sort(OriginFileElem.compare);
 };
 
+const forEach = (callback, a) => {
+  a.forEach(callback);
+};
+
 export const Origin = {
   empty,
   push,
   sort,
+  forEach,
   arbitrary,
 }
 

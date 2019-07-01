@@ -7,9 +7,9 @@ import * as M from "datastore/files-and-folders";
 import { Origin } from "datastore/origin";
 
 describe("files-and-folders", function() {
-  Loop.equal("(ffInv . ff) a", () => {
+  Loop.equal("(toOrigin . fromOrigin) a", () => {
     const a = Origin.arbitrary();
-    return [Origin.sort(M.ffInv(M.ff(a))), Origin.sort(a)];
+    return [Origin.sort(M.toOrigin(M.fromOrigin(a))), Origin.sort(a)];
   });
 
   Loop.equal("(fromJs . toJs) a", () => {
@@ -17,24 +17,12 @@ describe("files-and-folders", function() {
     return [M.fromJs(M.toJs(a)).toJS(), a.toJS()];
   });
 
-  Loop.equal("(ffInv . fromJs . toJs . computeDerived . ff) a", () => {
+  Loop.equal("(toOrigin . fromJs . toJs . computeDerived . fromOrigin) a", () => {
     const a = Origin.arbitrary();
     return [
-      Origin.sort(M.ffInv(M.fromJs(M.toJs(M.computeDerived(M.ff(a)))))),
+      Origin.sort(M.toOrigin(M.fromJs(M.toJs(M.computeDerived(M.fromOrigin(a)))))),
       Origin.sort(a)
     ];
-  });
-
-  Loop.equal("merge empty a === merge a empty", () => {
-    const a = M.arbitrary();
-    return [M.merge(M.empty(), a).toJS(), M.merge(a, M.empty()).toJS()];
-  });
-
-  Loop.equal("merge (merge a b) c === merge a (merge b c)", () => {
-    const a = M.arbitrary();
-    const b = M.arbitrary();
-    const c = M.arbitrary();
-    return [M.merge(M.merge(a, b), c).toJS(), M.merge(a, M.merge(b, c)).toJS()];
   });
 
   it("simple derived data test", () => {
@@ -45,7 +33,7 @@ describe("files-and-folders", function() {
       [{ size: 4, lastModified: 2 }, "/a/e/g"],
       [{ size: 5, lastModified: 1 }, "/h"]
     ];
-    const data = M.ff(origin);
+    const data = M.fromOrigin(origin);
     const derived = M.computeDerived(data);
 
     const test = (a, updater, predicates) => {

@@ -12,7 +12,7 @@ import { Set } from "immutable";
 describe("tags", function() {
   it("simple derived data test", () => {
     const ff = FilesAndFolders.computeDerived(
-      FilesAndFolders.ff([
+      FilesAndFolders.fromOrigin([
         [{ size: 1, lastModified: 0 }, "/a/b/c"],
         [{ size: 2, lastModified: 0 }, "/a/b/d"],
         [{ size: 3, lastModified: 0 }, "/a/e"],
