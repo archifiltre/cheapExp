@@ -11,7 +11,6 @@ import {
   isJsonFile,
   readFileSync,
   copyFileTree,
-  zipFileTree
 } from "traverse-file-tree";
 import FileSaver from "file-saver";
 

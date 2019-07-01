@@ -6,7 +6,7 @@ import { Record } from "immutable";
 
 import * as ObjectUtil from "util/object-util";
 
-import * as Origin from "datastore/origin";
+import { Origin } from "datastore/origin";
 
 import { List, Map } from "immutable";
 
@@ -111,6 +111,29 @@ const fileOrFolderFromJs = (a) => {
 }
 
 
+
+// const ff = origin => {
+//   const a = empty();
+
+//   Origin.forEach((origin_elem) => {
+//     const size = OriginFileElem.getSize(origin_elem);
+//     const last_modified = OriginFileElem.getLastModified(origin_elem);
+//     const path = OriginFileElem.getPath(origin_elem);
+
+
+//     const names = path.split("/");
+//     const ids = names.map((name, i) => names.slice(0, i + 1).join("/"));
+//     const childrens = ids
+//       .slice(1)
+//       .map(a => List.of(a))
+//       .concat([List()]);
+
+//   }, origin);
+// }
+
+
+
+// bug de win10 est là
 export const ff = a => {
   const mapper = ([file, path]) => {
     const names = path.split("/");

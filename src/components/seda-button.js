@@ -1,12 +1,7 @@
 import React from "react";
-// const FS = require('fs')
-// const JSZip = require('jszip')
 
 import { mkB } from "components/button";
 
-// import * as Csv from 'csv'
-// import { save, makeNameWithExt } from 'save'
-// import { recTraverseFileTreeForHook } from 'traverse-file-tree'
 
 import pick from "languages";
 
