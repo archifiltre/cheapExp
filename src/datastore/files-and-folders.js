@@ -136,8 +136,8 @@ export const toOrigin = (a) => {
 
 
 export const computeDerived = a => {
-  const removeOldDerivatedData = () => {
-    a = a.map(FileOrFolder.reinitDerivatedData);
+  const removeOldDerivedData = () => {
+    a = a.map(FileOrFolder.reinitDerivedData);
   };
 
   const rec = (id, depth) => {
@@ -199,7 +199,7 @@ export const computeDerived = a => {
     a = a.set(id, elem);
   }
 
-  removeOldDerivatedData(a);
+  removeOldDerivedData(a);
   const init_depth = 0;
   rec(rootId(), init_depth);
 

@@ -65,7 +65,7 @@ const create = (name) => {
   return a;
 };
 
-const reinitDerivatedData = (a) => {
+const reinitDerivedData = (a) => {
   a = setSize(0, a);
   a = setLastModifiedMax(0, a);
   a = setLastModifiedList(List(), a);
@@ -134,7 +134,7 @@ export const FileOrFolder = {
   toJs,
   fromJs,
 
-  reinitDerivatedData,
+  reinitDerivedData,
 
   getName,
   
