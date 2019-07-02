@@ -1,5 +1,4 @@
 import * as Arbitrary from "test/arbitrary";
-import * as Loop from "test/loop";
 
 import { generateRandomString } from "random-gen";
 import * as ObjectUtil from "util/object-util";
@@ -7,65 +6,55 @@ import { Record } from "immutable";
 
 import { List, Map, Set } from "immutable";
 
-const tagFactory = Record({
-  name: "",
-  ff_ids: Set(),
+import { Tag } from "datastore/tag";
 
-  size: 0,
-})
+import { FilesAndFolders } from "datastore/files-and-folders";
+import { FileOrFolder } from "datastore/file-or-folder";
 
-const tagToJs = (a) => {
-  return {
-    name: a.get("name"),
-    ff_ids: a.get("ff_ids").toArray(),
-
-    size: a.get("size"),
-  }
-}
-
-const tagFromJs = (a) => {
-  return tagFactory({
-    name: a.name,
-    ff_ids: Set(a.ff_ids),
-
-    size: a.size,
-  })
-}
-
-
-export const create = tagFactory;
 
 const makeId = () => generateRandomString(40);
 
-export const empty = () => {
+const empty = () => {
   return Map()
 };
 
-export const toJs = (a) => {
-  a = a.map(tagToJs);
+const toJs = (a) => {
+  a = a.map(Tag.toJs);
   a = a.toObject();
 
   return a;
 };
 
-export const fromJs = (a) => {
+const fromJs = (a) => {
   a = Map(a);
-  a = a.map(tagFromJs);
+  a = a.map(Tag.fromJs);
 
   return a;
 }
 
-const insert = (id, tag, tags) => {
-  const already_id = tags.reduce((acc, val, i) => {
-    if (val.get("name") === tag.get("name")) {
-      acc = i;
+const getById = (id, tags) => {
+  return tags.get(id);
+}
+
+const push = (tag, tags) => tags.set(makeId(), tag);
+
+
+const getIdByName = (name, tags) => {
+  return tags.reduce((acc, val, id) => {
+    if (Tag.getName(val) === name) {
+      acc = id;
     }
     return acc;
-  }, undefined);
+  }, null);
+}
 
-  if (already_id) {
-    tags = tags.update(already_id, a =>
-      a.update("ff_ids", b => b.concat(tag.get("ff_ids")))
+const insert = (id, tag, tags) => {
+  const already_id = getIdByName(Tag.getName(tag), tags);
+
+  if (already_id !== null) {
+    tags = tags.update(
+      already_id,
+      a => Tag.updateFfIds(ff_ids => ff_ids.concat(Tag.getFfIds(tag)), a)
     );
   } else {
     tags = tags.set(id, tag);
@@ -73,15 +62,12 @@ const insert = (id, tag, tags) => {
   return tags;
 };
 
-export const push = (tag, tags) => tags.set(makeId(), tag);
 
 const computeDerived = (ffs, tags) => {
-  tags = tags.map(tagFactory);
-
   const sortBySize = ids => {
     const compare = (a, b) => {
-      const s_a = ffs.get(a).get("size");
-      const s_b = ffs.get(b).get("size");
+      const s_a = FileOrFolder.getSize(FilesAndFolders.getById(a, ffs));
+      const s_b = FileOrFolder.getSize(FilesAndFolders.getById(b, ffs));
       if (s_a > s_b) {
         return -1;
       } else if (s_a === s_b) {
@@ -96,7 +82,7 @@ const computeDerived = (ffs, tags) => {
 
   const filterChildren = ids => {
     const getAllChildren = id => {
-      const children = ffs.get(id).get("children");
+      const children = FileOrFolder.getChildren(FilesAndFolders.getById(id, ffs));
       return children.concat(
         children
           .map(getAllChildren)
@@ -108,25 +94,33 @@ const computeDerived = (ffs, tags) => {
       return ids;
     } else {
       const head_id = ids.get(0);
-      const children_head_id = getAllChildren(head_id);
+      const head_id_children = getAllChildren(head_id);
 
       const tail = ids.slice(1);
-      const filtered_tail = tail.filter(
-        a => children_head_id.includes(a) === false
+      const tail_without_head_id_children = tail.filter(
+        a => head_id_children.includes(a) === false
       );
 
-      return List.of(head_id).concat(filterChildren(filtered_tail));
+      return List.of(head_id).concat(filterChildren(tail_without_head_id_children));
     }
   };
 
   const reduceToSize = ids => {
-    return ids.reduce((acc, val) => acc + ffs.get(val).get("size"), 0);
+    return ids.reduce(
+      (acc, val) => {
+        return acc + FileOrFolder.getSize(FilesAndFolders.getById(val, ffs))
+      },
+      0
+    );
   };
 
   tags = tags.map(tag => {
-    const ids = List(tag.get("ff_ids"));
+    const ids = List(Tag.getFfIds(tag));
 
-    tag = tag.set("size", reduceToSize(filterChildren(sortBySize(ids))))
+    tag = Tag.setSize(
+      reduceToSize(filterChildren(sortBySize(ids))),
+      tag
+    );
 
     return tag;
   });
@@ -134,9 +128,9 @@ const computeDerived = (ffs, tags) => {
   return tags;
 };
 
-export const update = (ffs, tags) => {
+const update = (ffs, tags) => {
   tags = tags.reduce((acc, val, id) => insert(id, val, acc), empty());
-  tags = tags.filter(val => val.get("ff_ids").size !== 0);
+  tags = tags.filter(val => Tag.getFfIds(val).size !== 0);
   tags = computeDerived(ffs, tags);
 
   return tags;
@@ -144,20 +138,19 @@ export const update = (ffs, tags) => {
 
 
 const toNameList = (tags) => {
-  return tags.map(a => a.get("name")).valueSeq().toArray();
+  return tags.map(Tag.getName).valueSeq().toArray();
 }
 
-export const toStrList2 = (ff_id_list, ffs, tags) => {
+const toStrList2 = (ff_id_list, ffs, tags) => {
   const name_list = toNameList(tags);
   const header = name_list
     .map((tag_name,i) => "tag" + i + " : " + tag_name);
-  const root_ff_id = "";
   const mapFfidToStrList = {};
 
   const rec = (parent_tag, curr_ff_id) => {
-    const curr_ff = ffs.get(curr_ff_id);
+    const curr_ff = FilesAndFolders.getById(curr_ff_id, ffs);
     let curr_ff_tags_name = toNameList(
-      tags.filter(tag => tag.get("ff_ids").includes(curr_ff_id))
+      tags.filter(tag => Tag.getFfIds(tag).includes(curr_ff_id))
     );
     curr_ff_tags_name = curr_ff_tags_name.concat(parent_tag);
 
@@ -169,16 +162,31 @@ export const toStrList2 = (ff_id_list, ffs, tags) => {
       }
     });
 
-    const curr_ff_children = curr_ff.get("children");
+    const curr_ff_children = FileOrFolder.getChildren(curr_ff);
     curr_ff_children.forEach((id) =>
       rec(curr_ff_tags_name, id)
     );
   }
 
-  rec([], root_ff_id);
+  rec([], FilesAndFolders.rootId());
 
   const ans = [header];
   ff_id_list.forEach(id=>ans.push(mapFfidToStrList[id]));
   return ans;
 } 
+
+export const Tags = {
+  empty,
+  push,
+
+  getIdByName,
+  getById,
+
+  toJs,
+  fromJs,
+
+  update,
+
+  toStrList2,
+}
 

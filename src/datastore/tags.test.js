@@ -1,73 +1,70 @@
 import chai from "chai";
-const should = chai.should();
 const expect = chai.expect;
 
-import * as Loop from "test/loop";
-import * as Arbitrary from "test/arbitrary";
-import * as FilesAndFolders from "datastore/files-and-folders";
-import * as M from "datastore/tags";
+import { Quickcheck } from "test/quickcheck";
+import { FilesAndFolders } from "datastore/files-and-folders";
+import { Tags } from "datastore/tags";
+import { Tag } from "datastore/tag";
+import { Origin } from "datastore/origin";
 
 import { Set } from "immutable";
 
 describe("tags", function() {
   it("simple derived data test", () => {
-    const ff = FilesAndFolders.computeDerived(
-      FilesAndFolders.fromOrigin([
-        [{ size: 1, lastModified: 0 }, "/a/b/c"],
-        [{ size: 2, lastModified: 0 }, "/a/b/d"],
-        [{ size: 3, lastModified: 0 }, "/a/e"],
-        [{ size: 4, lastModified: 0 }, "/a/f/g"]
-      ])
+    const ffs = FilesAndFolders.computeDerived(
+      FilesAndFolders.fromOrigin(Origin.fromJs([
+        [{ size: 1, last_modified: 0 }, "/a/b/c"],
+        [{ size: 2, last_modified: 0 }, "/a/b/d"],
+        [{ size: 3, last_modified: 0 }, "/a/e"],
+        [{ size: 4, last_modified: 0 }, "/a/f/g"]
+      ]))
     );
 
-    let tags = M.empty();
-    tags = M.update(ff, tags);
+    const b_id = FilesAndFolders.getIdByName("b", ffs);
+    const d_id = FilesAndFolders.getIdByName("d", ffs);
+    const e_id = FilesAndFolders.getIdByName("e", ffs);
+    const g_id = FilesAndFolders.getIdByName("g", ffs);
 
-    tags = M.push(
-      M.create({ name: "T", ff_ids: Set.of("/a/b", "/a/b/d") }),
+    let tags = Tags.empty();
+    tags = Tags.update(ffs, tags);
+
+    tags = Tags.push(
+      Tag.create("T", Set.of(b_id, d_id)),
       tags
     );
-    tags = M.push(
-      M.create({ name: "U", ff_ids: Set.of("/a/e", "/a/b/d") }),
+    tags = Tags.push(
+      Tag.create("U", Set.of(e_id, d_id)),
       tags
     );
-    tags = M.push(M.create({ name: "T", ff_ids: Set.of("/a/f/g") }), tags);
-    tags = M.push(M.create({ name: "V", ff_ids: Set() }), tags);
+    tags = Tags.push(Tag.create("T", Set.of(g_id)), tags);
+    tags = Tags.push(Tag.create("V", Set()), tags);
 
-    tags = M.update(ff, tags);
+    tags = Tags.update(ffs, tags);
 
-    const test = (a, updater, predicates) => {
-      Object.keys(updater).forEach(key => (a = a.update(key, updater[key])));
-      Object.keys(predicates).forEach(key =>
-        [key, a.get(key)].should.deep.equal([key, predicates[key]])
-      );
-    };
+    const test = ({
+      name,
+      ff_ids,
+      size,
+    }) => {
+      const a = Tags.getById(Tags.getIdByName(name, tags), tags);
 
-    const getter = (name, tags) => {
-      const ans = tags.findEntry(val => val.get("name") === name);
-      if (ans) {
-        return ans[1];
-      } else {
-        return ans;
-      }
-    };
+      expect(Tag.getName(a)).to.equal(name);
+      expect(Tag.getFfIds(a).sort().toArray()).to.deep.equal(ff_ids.sort());
+      expect(Tag.getSize(a)).to.equal(size);
+    }
 
-    const updater = {
-      ff_ids: a => a.sort().toArray()
-    };
-
-    test(getter("T", tags), updater, {
+    test({
       name: "T",
-      ff_ids: ["/a/b", "/a/b/d", "/a/f/g"],
-      size: 7
-    });
+      ff_ids: [b_id, d_id, g_id],
+      size: 7,
+    })
 
-    test(getter("U", tags), updater, {
+    test({
       name: "U",
-      ff_ids: ["/a/b/d", "/a/e"],
-      size: 5
-    });
+      ff_ids: [d_id, e_id],
+      size: 5,
+    })
 
-    expect(getter("V", tags)).to.be.undefined;
+    expect(Tags.getIdByName("V", tags)).to.be.null;
   });
 });

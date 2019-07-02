@@ -1,32 +1,27 @@
 import * as Arbitrary from "test/arbitrary";
-
-import * as ArrayUtil from "util/array-util";
 import * as ListUtil from "util/list-util";
-import { Record } from "immutable";
-
-import * as ObjectUtil from "util/object-util";
-
 import { Origin } from "datastore/origin";
-
 import { List, Map } from "immutable";
-
 import { CSV } from "csv";
 import { generateRandomString } from "random-gen";
-
 import { OriginFileElem } from "datastore/origin-file-elem";
 import { FileOrFolder } from "datastore/file-or-folder";
-
 import pick from "languages";
+
 const Path = require("path");
 
 
 const makeId = () => generateRandomString(40);
+// const rootId = (() => {
+//   const id = makeId();
+//   return () => id;
+// })();
 const rootId = () => "";
 const rootName = () => "";
 
-export const empty = () => {
+const empty = () => {
   let a = Map();
-  a = a.set(rootId(), FileOrFolder.empty());
+  a = setById(rootId(), FileOrFolder.empty(), a);
   return a;
 }
 
@@ -42,7 +37,21 @@ const getIdByName = (name, a) => {
   }
 }
 
-export const arbitrary = () => {
+const getById = (id, a) => {
+  return a.get(id);
+}
+
+const setById = (id, ff, a) => {
+  return a.set(id, ff);
+}
+
+const updateById = (id, f, a) => {
+  return setById(id, f(getById(id, a)), a);
+}
+
+const toIdArray = a => a.keySeq().toArray();
+
+const arbitrary = () => {
   return fromOrigin(Origin.arbitrary())
     .map(a => {
       a = FileOrFolder.setAlias(Arbitrary.string(), a);
@@ -52,19 +61,32 @@ export const arbitrary = () => {
     });
 }
 
-export const toJs = (a) => {
+
+const toJs = (a) => {
   a = a.map(FileOrFolder.toJs);
   a = a.toObject();
   return a;
 }
 
-export const fromJs = (a) => {
+const fromJs = (a) => {
   a = Map(a);
   a = a.map(FileOrFolder.fromJs);
   return a;
 }
 
-export const fromOrigin = (origin) => {
+const computeNameArray = (id, ffs) => {
+  const ff = getById(id, ffs);
+  const parent = FileOrFolder.getParent(ff);
+
+  if (parent === null) {
+    return [rootName()];
+  } else {
+    const name = FileOrFolder.getName(ff);
+    return computeNameArray(parent, ffs).concat([name]);
+  }
+}
+
+const fromOrigin = (origin) => {
   let a = empty();
 
   const addToFFsAndReturnItsId = (name, parent_id) => {
@@ -72,13 +94,13 @@ export const fromOrigin = (origin) => {
     if (id !== null) {
       return id;
     } else {
-      const elem = FileOrFolder.create(name);
+      const elem = FileOrFolder.create(name, parent_id);
       const child_id = makeId();
-      a = a.set(child_id, elem);
-        a = a.update(parent_id, (elem) => {
-          elem = FileOrFolder.pushToChildren(child_id, elem);
-          return elem;
-        });
+      a = setById(child_id, elem, a);
+      a = a.update(parent_id, (elem) => {
+        elem = FileOrFolder.pushToChildren(child_id, elem);
+        return elem;
+      });
       return child_id;
     }
   }
@@ -107,11 +129,11 @@ export const fromOrigin = (origin) => {
   return a;
 }
 
-export const toOrigin = (a) => {
+const toOrigin = (a) => {
   const origin = Origin.empty();
 
   const rec = (id, names) => {
-    const elem = a.get(id);
+    const elem = getById(id, a);
     const children = FileOrFolder.getChildren(elem);
     const name = FileOrFolder.getName(elem);
 
@@ -135,13 +157,13 @@ export const toOrigin = (a) => {
 
 
 
-export const computeDerived = a => {
+const computeDerived = a => {
   const removeOldDerivedData = () => {
     a = a.map(FileOrFolder.reinitDerivedData);
   };
 
   const rec = (id, depth) => {
-    let elem = a.get(id);
+    let elem = getById(id, a);
     const children = FileOrFolder.getChildren(elem);
 
     elem = FileOrFolder.setDepth(depth, elem);
@@ -165,7 +187,7 @@ export const computeDerived = a => {
       let list = List();
       let nb_files = 0;
       children.forEach((id) => {
-        const elem = a.get(id);
+        const elem = getById(id, a);
 
         size += FileOrFolder.getSize(elem);
         list = list.concat(FileOrFolder.getLastModifiedList(elem));
@@ -182,21 +204,21 @@ export const computeDerived = a => {
 
       elem = FileOrFolder.setSortBySizeIndex(
         ListUtil.indexSort(
-          (id)=>FileOrFolder.getSize(a.get(id)),
+          (id)=>FileOrFolder.getSize(getById(id, a)),
           children
         ).reverse(),
         elem
       )
       elem = FileOrFolder.setSortByDateIndex(
         ListUtil.indexSort(
-          (id)=>FileOrFolder.getLastModifiedAverage(a.get(id)),
+          (id)=>FileOrFolder.getLastModifiedAverage(getById(id, a)),
           children
         ),
         elem
       )
     }
 
-    a = a.set(id, elem);
+    a = setById(id, elem, a);
   }
 
   removeOldDerivedData(a);
@@ -205,238 +227,6 @@ export const computeDerived = a => {
 
   return a;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const fileOrFolderFactory = Record({
-//   name: "",
-//   alias: "",
-//   comments: "",
-//   children: List(),
-//   file_size: 0,
-//   file_last_modified: 0,
-
-
-//   size: 0,
-//   last_modified_max: 0,
-//   last_modified_list: List(),
-//   last_modified_min: Number.MAX_SAFE_INTEGER,
-//   last_modified_median: null,
-//   last_modified_average: null,
-//   depth: 0,
-//   nb_files: 0,
-//   sort_by_size_index: List(),
-//   sort_by_date_index: List(),
-// })
-
-// const reinitDerivatedData = (a) => {
-//   a = a.set("size", 0);
-//   a = a.set("last_modified_max", 0);
-//   a = a.set("last_modified_list", List());
-//   a = a.set("last_modified_min", Number.MAX_SAFE_INTEGER);
-//   a = a.set("last_modified_median", null);
-//   a = a.set("last_modified_average", null);
-//   a = a.set("depth", 0);
-//   a = a.set("nb_files", 0);
-//   a = a.set("sort_by_size_index", List());
-//   a = a.set("sort_by_date_index", List());
-
-//   return a;
-// }
-
-// const copyDerivatedData = (fromA, toB) => {
-//   toB = toB.set("size", fromA.get("size"));
-//   toB = toB.set("last_modified_max", fromA.get("last_modified_max"));
-//   toB = toB.set("last_modified_list", fromA.get("last_modified_list"));
-//   toB = toB.set("last_modified_min", fromA.get("last_modified_min"));
-//   toB = toB.set("last_modified_median", fromA.get("last_modified_median"));
-//   toB = toB.set("last_modified_average", fromA.get("last_modified_average"));
-//   toB = toB.set("depth", fromA.get("depth"));
-//   toB = toB.set("nb_files", fromA.get("nb_files"));
-//   toB = toB.set("sort_by_size_index", fromA.get("sort_by_size_index"));
-//   toB = toB.set("sort_by_date_index", fromA.get("sort_by_date_index"));
-
-//   return toB;
-// }
-
-// const fileOrFolderToJs = (a) => {
-//   return {
-//     name: a.get("name"),
-//     alias: a.get("alias"),
-//     comments: a.get("comments"),
-//     children: a.get("children").toArray(),
-//     file_size: a.get("file_size"),
-//     file_last_modified: a.get("file_last_modified"),
-
-//     size: a.get("size"),
-//     last_modified_max: a.get("last_modified_max"),
-//     last_modified_list: a.get("last_modified_list").toArray(),
-//     last_modified_min: a.get("last_modified_min"),
-//     last_modified_median: a.get("last_modified_median"),
-//     last_modified_average: a.get("last_modified_average"),
-//     depth: a.get("depth"),
-//     nb_files: a.get("nb_files"),
-//     sort_by_size_index: a.get("sort_by_size_index").toArray(),
-//     sort_by_date_index: a.get("sort_by_date_index").toArray(),
-//   }
-// }
-// fileOrFolderFromJs
-// const  = (a) => {
-//   return fileOrFolderFactory({
-//     name: a.name,
-//     alias: a.alias,
-//     comments: a.comments,
-//     children: List(a.children),
-//     file_size: a.file_size,
-//     file_last_modified: a.file_last_modified,
-
-//     size: a.size,
-//     last_modified_max: a.last_modified_max,
-//     last_modified_list: List(a.last_modified_list),
-//     last_modified_min: a.last_modified_min,
-//     last_modified_median: a.last_modified_median,
-//     last_modified_average: a.last_modified_average,
-//     depth: a.depth,
-//     nb_files: a.nb_files,
-//     sort_by_size_index: List(a.sort_by_size_index),
-//     sort_by_date_index: List(a.sort_by_date_index),
-//   })
-// }
-
-
-
-
-
-// export const getFfRootId = () => "";
-
-
-// const reduce = (reducer, m) => {
-//   const rec = id => {
-//     const node = m.get(id);
-//     const children_ans_array = node
-//       .get("children")
-//       .toArray()
-//       .map(rec);
-//     const [ans, next_node] = reducer([children_ans_array, node]);
-//     m = m.set(id, next_node);
-//     return ans;
-//   };
-
-//   return [rec(getFfRootId()), m];
-// };
-
-// const dive = (diver, first_ans, m) => {
-//   const rec = (parent_ans, id) => {
-//     const node = m.get(id);
-//     const [ans, next_node] = diver([parent_ans, node]);
-//     m = m.set(id, next_node);
-//     node.get("children").forEach(id => rec(ans, id));
-//   };
-//   rec(first_ans, "");
-
-//   return m;
-// };
-
-
-
-
-// const mergeDerived = (a, b) => {
-//   b = b.update("size", b => b + a.get("size"));
-//   b = b.update("last_modified_list", b =>
-//     b.concat(a.get("last_modified_list"))
-//   );
-//   b = b.update("nb_files", b => b + a.get("nb_files"));
-//   return b;
-// };
-
-// const afterMergeDerived = a => {
-//   const list = a.get("last_modified_list");
-//   a = a.set("last_modified_max", list.max());
-//   a = a.set("last_modified_min", list.min());
-//   a = a.set("last_modified_median", ListUtil.median(list));
-//   a = a.set("last_modified_average", ListUtil.average(list));
-//   return a;
-// };
-
-// const sortChildren = (children_ans_array, a) => {
-//   const children_ans = List(children_ans_array);
-//   a = a.set(
-//     "sort_by_size_index",
-//     ListUtil.indexSort(a => a.get("size"), children_ans).reverse()
-//   );
-//   a = a.set(
-//     "sort_by_date_index",
-//     ListUtil.indexSort(a => a.get("last_modified_average"), children_ans)
-//   );
-//   return a;
-// };
-
-// export const computeDerived = m => {
-//   m = m.map(reinitDerivatedData)
-
-//   const reducer = ([children_ans_array, node]) => {
-//     if (children_ans_array.length === 0) {
-//       const flm = node.get("file_last_modified");
-//       const size = node.get("file_size");
-
-//       node = node.set("size", size);
-//       node = node.set("last_modified_max", flm);
-//       node = node.set("last_modified_list", List.of(flm));
-//       node = node.set("last_modified_min", flm);
-//       node = node.set("last_modified_median", flm);
-//       node = node.set("last_modified_average", flm);
-//       node = node.set("nb_files", 1);
-
-//     } else {
-//       let ans = children_ans_array.reduce((acc, val) => mergeDerived(val, acc));
-//       ans = afterMergeDerived(ans);
-//       ans = sortChildren(children_ans_array, ans);
-
-//       node = copyDerivatedData(ans, node)
-//     }
-
-//     return [node, node];
-//   };
-//   let [_, next_m] = reduce(reducer, m);
-
-//   const diver = ([parent_ans, node]) => {
-//     node = node.set("depth", parent_ans);
-//     parent_ans = parent_ans + 1;
-//     return [parent_ans, node];
-//   };
-//   next_m = dive(diver, 0, next_m);
-
-//   return next_m;
-// };
-
-
-export const toFfidList = a => a.keySeq().toArray();
-
 
 const str_list_2_header = pick({
   fr:[
@@ -475,29 +265,31 @@ const folder_str = pick({
   en:"folder",
 });
 
-export const toStrList2 = (ff_id_list, ffs) => {
+const toStrList2 = (ff_id_list, ffs) => {
   const ans = [str_list_2_header.slice()];
   const mapFfidToStrList = {};
 
   ffs.forEach((ff, id) => {
-    if (id === "") {
+    if (id === rootId()) {
       return undefined;
     }
-    const platform_independent_path = id;
-    const platform_dependent_path = id.split("/").join(Path.sep);
+    const names = computeNameArray(id, ffs);
+    const platform_dependent_path = names.join(Path.sep);
     const path_length = platform_dependent_path.length;
-    const name = ff.get("name");
+    const name = FileOrFolder.getName(ff);
     const extension = Path.extname(name);
-    const size = ff.get("size");
-    const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
-    const alias = ff.get("alias");
-    const comments = ff.get("comments");
-    const children = ff.get("children");
+    const size = FileOrFolder.getSize(ff);
+    const last_modified = CSV.epochToFormatedUtcDateString(
+      FileOrFolder.getLastModifiedMax(ff)
+    );
+    const alias = FileOrFolder.getAlias(ff);
+    const comments = FileOrFolder.getComments(ff);
+    const children = FileOrFolder.getChildren(ff);
     let file_or_folder = folder_str;
     if (children.size === 0) {
       file_or_folder = file_str;
     }
-    const depth = ff.get("depth");
+    const depth = FileOrFolder.getDepth(ff);
 
     mapFfidToStrList[id] = [
       "",
@@ -520,32 +312,26 @@ export const toStrList2 = (ff_id_list, ffs) => {
 }
 
 
-export const toResipStrList2 = (ff_id_list, ffs) => {
+const toResipStrList2 = (ff_id_list, ffs) => {
   const header = ["File", "Content.DescriptionLevel", "Content.Title"];
   const ans = [header];
   const mapFfidToStrList = {};
 
   ffs.forEach((ff, id) => {
-    if (id === "") {
+    if (id === rootId()) {
       return undefined;
     }
-    // const line_id = generateRandomString(40);
-    const platform_independent_path = id;
-    // const platform_dependent_path = id.split("/").join(Path.sep);
+
+    const names = computeNameArray(id, ffs);
     const platform_dependent_path = id.split("/").join("\\");
-    // const path_length = platform_dependent_path.length;
-    const title = ff.get("name");
-    // const extension = Path.extname(name);
-    // const size = ff.get("size");
-    // const last_modified = CSV.epochToFormatedUtcDateString(ff.get("last_modified_max"));
-    // const alias = ff.get("alias");
-    // const comments = ff.get("comments");
-    const children = ff.get("children");
+
+    const title = FileOrFolder.getName(ff);
+  
+    const children = FileOrFolder.getChildren(ff);
     let description_level = "RecordGrp";
     if (children.size === 0) {
       description_level = "Item";
     }
-    // const depth = ff.get("depth");
 
     mapFfidToStrList[id] = [
       platform_dependent_path,
@@ -558,3 +344,36 @@ export const toResipStrList2 = (ff_id_list, ffs) => {
 
   return ans;
 }
+
+
+
+
+
+export const FilesAndFolders = {
+  rootId,
+  rootName,
+
+  empty,
+  arbitrary,
+
+  toIdArray,
+
+  getIdByName,
+  getById,
+  updateById,
+
+  computeDerived,
+  computeNameArray,
+
+  toOrigin,
+  fromOrigin,
+
+  toJs,
+  fromJs,
+
+  toStrList2,
+  toResipStrList2,
+}
+
+
+

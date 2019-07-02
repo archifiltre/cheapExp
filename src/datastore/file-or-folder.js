@@ -1,5 +1,3 @@
-
-import * as ObjectUtil from "util/object-util";
 import { Record, List } from "immutable";
 
 const accessors = (name) => {
@@ -15,6 +13,7 @@ const [getChildren, setChildren] = accessors("children");
 const pushToChildren = (id, a) => {
   return setChildren(getChildren(a).push(id), a);
 };
+const [getParent, setParent] = accessors("parent");
 
 const [getFileSize, setFileSize] = accessors("file_size");
 const [getFileLastModified, setFileLastModified] = accessors("file_last_modified");
@@ -37,6 +36,7 @@ const recordFactory = Record({
   alias: "",
   comments: "",
   children: List(),
+  parent: null,
   file_size: 0,
   file_last_modified: 0,
 
@@ -57,10 +57,11 @@ const empty = () => {
   return recordFactory();
 };
 
-const create = (name) => {
+const create = (name, parent_id) => {
   let a = empty();
 
   a = setName(name, a);
+  a = setParent(parent_id, a);
 
   return a;
 };
@@ -86,6 +87,7 @@ const toJs = (a) => {
     alias: getAlias(a),
     comments: getComments(a),
     children: getChildren(a).toArray(),
+    parent: getParent(a),
     file_size: getFileSize(a),
     file_last_modified: getFileLastModified(a),
 
@@ -109,6 +111,7 @@ const fromJs = (a) => {
   ans = setAlias(a.alias, ans);
   ans = setComments(a.comments, ans);
   ans = setChildren(List(a.children), ans);
+  ans = setParent(a.parent, ans);
   ans = setFileSize(a.file_size, ans);
   ans = setFileLastModified(a.file_last_modified, ans);
 
@@ -141,6 +144,8 @@ export const FileOrFolder = {
   getChildren,
   pushToChildren,
 
+  getParent,
+
   setFileSize,
   getFileSize,
 
@@ -148,22 +153,28 @@ export const FileOrFolder = {
   getFileLastModified,
 
   setAlias,
+  getAlias,
   
   setComments,
-  
+  getComments,
+
   setDepth,
+  getDepth,
   
   setSize,
   getSize,
 
   setLastModifiedMin,
+  getLastModifiedMin,
 
   setLastModifiedAverage,
   getLastModifiedAverage,
 
   setLastModifiedMedian,
+  getLastModifiedMedian,
 
   setLastModifiedMax,
+  getLastModifiedMax,
 
   setLastModifiedList,
   getLastModifiedList,
@@ -172,6 +183,8 @@ export const FileOrFolder = {
   getNbFiles,
 
   setSortBySizeIndex,
+  getSortBySizeIndex,
 
   setSortByDateIndex,
+  getSortByDateIndex,
 }

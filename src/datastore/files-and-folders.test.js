@@ -1,60 +1,167 @@
 import chai from "chai";
-const should = chai.should();
+const expect = chai.expect;
 
-import * as Loop from "test/loop";
-import * as Arbitrary from "test/arbitrary";
-import * as M from "datastore/files-and-folders";
+import { Quickcheck } from "test/quickcheck";
+import { FilesAndFolders } from "datastore/files-and-folders";
+import { FileOrFolder } from "datastore/file-or-folder";
 import { Origin } from "datastore/origin";
 
 describe("files-and-folders", function() {
-  Loop.equal("(toOrigin . fromOrigin) a", () => {
+  Quickcheck.loop("(toOrigin . fromOrigin) a", () => {
     const a = Origin.arbitrary();
-    return [Origin.sort(M.toOrigin(M.fromOrigin(a))), Origin.sort(a)];
-  });
-
-  Loop.equal("(fromJs . toJs) a", () => {
-    const a = M.computeDerived(M.arbitrary());
-    return [M.fromJs(M.toJs(a)).toJS(), a.toJS()];
-  });
-
-  Loop.equal("(toOrigin . fromJs . toJs . computeDerived . fromOrigin) a", () => {
-    const a = Origin.arbitrary();
-    return [
-      Origin.sort(M.toOrigin(M.fromJs(M.toJs(M.computeDerived(M.fromOrigin(a)))))),
+    expect(
+      Origin.sort(FilesAndFolders.toOrigin(FilesAndFolders.fromOrigin(a)))
+    ).to.deep.equal(
       Origin.sort(a)
-    ];
+    );
+  });
+
+  Quickcheck.loop("(fromJs . toJs) a", () => {
+    const a = FilesAndFolders.computeDerived(FilesAndFolders.arbitrary());
+    expect(
+      FilesAndFolders.fromJs(FilesAndFolders.toJs(a)).toJS()
+    ).to.deep.equal(
+      a.toJS()
+    );
+  });
+
+  Quickcheck.loop("(toOrigin . fromJs . toJs . computeDerived . fromOrigin) a", () => {
+    const a = Origin.arbitrary();
+    expect(
+      Origin.sort(FilesAndFolders.toOrigin(FilesAndFolders.fromJs(FilesAndFolders.toJs(FilesAndFolders.computeDerived(FilesAndFolders.fromOrigin(a)))))),
+    ).to.deep.equal(
+      Origin.sort(a)
+    );
+  });
+
+  it("computeNameArray", () => {
+    const origin = Origin.fromJs([
+      [{ size: 1, last_modified: 5 }, "/a/b/c"],
+      [{ size: 2, last_modified: 4 }, "/a/b/d"],
+      [{ size: 3, last_modified: 3 }, "/a/e/f"],
+      [{ size: 4, last_modified: 2 }, "/a/e/g"],
+      [{ size: 5, last_modified: 1 }, "/h"]
+    ]);
+    const data = FilesAndFolders.fromOrigin(origin);
+
+    const root_name = FilesAndFolders.rootName();
+
+    const f_id = FilesAndFolders.getIdByName("f", data);
+    let names = FilesAndFolders.computeNameArray(f_id, data);
+
+    expect(names).to.deep.equal([root_name, "a", "e", "f"]);
+
+    const a_id = FilesAndFolders.getIdByName("a", data);
+    names = FilesAndFolders.computeNameArray(a_id, data);
+
+    expect(names).to.deep.equal([root_name, "a"]);
+
+    const root_id = FilesAndFolders.getIdByName(FilesAndFolders.rootId(), data);
+    names = FilesAndFolders.computeNameArray(root_id, data);
+
+    expect(names).to.deep.equal([root_name]);
+  });
+
+
+  it("simple toStrList2 test", () => {
+    const origin = Origin.fromJs([
+      [{ size: 1, last_modified: 5 }, "/a/b/c"],
+      [{ size: 2, last_modified: 4 }, "/a/b/d"],
+      [{ size: 3, last_modified: 3 }, "/a/e/f"],
+      [{ size: 4, last_modified: 2 }, "/a/e/g"],
+      [{ size: 5, last_modified: 1 }, "/h.extension"]
+    ]);
+    const data = FilesAndFolders.fromOrigin(origin);
+    let derived = FilesAndFolders.computeDerived(data);
+
+    const d_id = FilesAndFolders.getIdByName("d", derived);
+    derived = FilesAndFolders.updateById(
+      d_id,
+      a => FileOrFolder.setAlias("alias", a),
+      derived
+    );
+
+    const e_id = FilesAndFolders.getIdByName("e", derived);
+    derived = FilesAndFolders.updateById(
+      e_id,
+      a => FileOrFolder.setComments("comments", a),
+      derived
+    )
+
+    const h_id = FilesAndFolders.getIdByName("h.extension", derived);
+
+    const ids = [d_id, e_id, h_id];
+    const str_list_2 = FilesAndFolders.toStrList2(ids, derived);
+
+    expect(str_list_2).to.deep.equal([
+      ["","path","path length","name","extension","size (octet)","last_modified","alias","comments","file/folder","depth",],
+      ["","/a/b/d",6,"d","",2,"01/01/1970","alias","","file",3],
+      ["","/a/e",4,"e","",7,"01/01/1970","","comments","folder",2],
+      ["","/h.extension",12,"h.extension",".extension",5,"01/01/1970","","","file",1],
+    ])
   });
 
   it("simple derived data test", () => {
-    const origin = [
-      [{ size: 1, lastModified: 5 }, "/a/b/c"],
-      [{ size: 2, lastModified: 4 }, "/a/b/d"],
-      [{ size: 3, lastModified: 3 }, "/a/e/f"],
-      [{ size: 4, lastModified: 2 }, "/a/e/g"],
-      [{ size: 5, lastModified: 1 }, "/h"]
-    ];
-    const data = M.fromOrigin(origin);
-    const derived = M.computeDerived(data);
+    const origin = Origin.fromJs([
+      [{ size: 1, last_modified: 5 }, "/a/b/c"],
+      [{ size: 2, last_modified: 4 }, "/a/b/d"],
+      [{ size: 3, last_modified: 3 }, "/a/e/f"],
+      [{ size: 4, last_modified: 2 }, "/a/e/g"],
+      [{ size: 5, last_modified: 1 }, "/h"]
+    ]);
+    const data = FilesAndFolders.fromOrigin(origin);
+    const derived = FilesAndFolders.computeDerived(data);
 
-    const test = (a, updater, predicates) => {
-      Object.keys(updater).forEach(key => (a = a.update(key, updater[key])));
-      Object.keys(predicates).forEach(key =>
-        [key, a.get(key)].should.deep.equal([key, predicates[key]])
+    const test = ({
+      name,
+      alias,
+      comments,
+      children,
+      size,
+      last_modified_max,
+      last_modified_list,
+      last_modified_min,
+      last_modified_median,
+      last_modified_average,
+      depth,
+      nb_files,
+      sort_by_size_index,
+      sort_by_date_index,
+    }) => {
+      const a = FilesAndFolders.getById(
+        FilesAndFolders.getIdByName(name, derived),
+        derived
       );
-    };
 
-    const updater = {
-      children: a => a.sort().toArray(),
-      last_modified_list: a => a.sort().toArray(),
-      sort_by_size_index: a => a.toArray(),
-      sort_by_date_index: a => a.toArray()
-    };
+      expect(FileOrFolder.getName(a)).to.equal(name);
+      expect(FileOrFolder.getAlias(a)).to.equal(alias);
+      expect(FileOrFolder.getComments(a)).to.equal(comments);
+      expect(FileOrFolder.getChildren(a).sort().toArray()).to.deep.equal(children.sort());
 
-    test(derived.get(""), updater, {
+      expect(FileOrFolder.getSize(a)).to.equal(size);
+      expect(FileOrFolder.getLastModifiedMax(a)).to.equal(last_modified_max);
+      expect(
+        FileOrFolder.getLastModifiedList(a).sort().toArray()
+      ).to.deep.equal(
+        last_modified_list.sort()
+      );
+      expect(FileOrFolder.getLastModifiedMin(a)).to.equal(last_modified_min);
+      expect(FileOrFolder.getLastModifiedMedian(a)).to.equal(last_modified_median);
+      expect(FileOrFolder.getLastModifiedAverage(a)).to.equal(last_modified_average);
+      expect(FileOrFolder.getDepth(a)).to.equal(depth);
+      expect(FileOrFolder.getNbFiles(a)).to.equal(nb_files);
+      expect(FileOrFolder.getSortBySizeIndex(a).toArray()).to.deep.equal(sort_by_size_index);
+      expect(FileOrFolder.getSortByDateIndex(a).toArray()).to.deep.equal(sort_by_date_index);
+    }
+
+    test({
       name: "",
       alias: "",
       comments: "",
-      children: ["/a", "/h"],
+      children: [
+        FilesAndFolders.getIdByName("a", derived),
+        FilesAndFolders.getIdByName("h", derived)
+      ],
       size: 15,
       last_modified_max: 5,
       last_modified_list: [1, 2, 3, 4, 5],
@@ -64,12 +171,11 @@ describe("files-and-folders", function() {
       depth: 0,
       nb_files: 5,
       sort_by_size_index: [0, 1],
-      sort_by_date_index: [1, 0]
-    });
+      sort_by_date_index: [1, 0],
+    })
 
-    test(derived.get("/h"), updater, {
-      file_size: 5,
-      file_last_modified: 1,
+
+    test({
       name: "h",
       alias: "",
       comments: "",
@@ -83,14 +189,17 @@ describe("files-and-folders", function() {
       depth: 1,
       nb_files: 1,
       sort_by_size_index: [],
-      sort_by_date_index: []
-    });
+      sort_by_date_index: [],
+    })
 
-    test(derived.get("/a"), updater, {
+    test({
       name: "a",
       alias: "",
       comments: "",
-      children: ["/a/b", "/a/e"],
+      children: [
+        FilesAndFolders.getIdByName("b", derived),
+        FilesAndFolders.getIdByName("e", derived)
+      ],
       size: 10,
       last_modified_max: 5,
       last_modified_list: [2, 3, 4, 5],
@@ -100,14 +209,17 @@ describe("files-and-folders", function() {
       depth: 1,
       nb_files: 4,
       sort_by_size_index: [1, 0],
-      sort_by_date_index: [1, 0]
-    });
+      sort_by_date_index: [1, 0],
+    })
 
-    test(derived.get("/a/b"), updater, {
+    test({
       name: "b",
       alias: "",
       comments: "",
-      children: ["/a/b/c", "/a/b/d"],
+      children: [
+        FilesAndFolders.getIdByName("c", derived),
+        FilesAndFolders.getIdByName("d", derived)
+      ],
       size: 3,
       last_modified_max: 5,
       last_modified_list: [4, 5],
@@ -117,10 +229,10 @@ describe("files-and-folders", function() {
       depth: 2,
       nb_files: 2,
       sort_by_size_index: [1, 0],
-      sort_by_date_index: [1, 0]
-    });
+      sort_by_date_index: [1, 0],
+    })
 
-    test(derived.get("/a/b/c"), updater, {
+    test({
       name: "c",
       alias: "",
       comments: "",
@@ -134,10 +246,10 @@ describe("files-and-folders", function() {
       depth: 3,
       nb_files: 1,
       sort_by_size_index: [],
-      sort_by_date_index: []
-    });
+      sort_by_date_index: [],
+    })
 
-    test(derived.get("/a/b/d"), updater, {
+    test({
       name: "d",
       alias: "",
       comments: "",
@@ -151,14 +263,17 @@ describe("files-and-folders", function() {
       depth: 3,
       nb_files: 1,
       sort_by_size_index: [],
-      sort_by_date_index: []
-    });
+      sort_by_date_index: [],
+    })
 
-    test(derived.get("/a/e"), updater, {
+    test({
       name: "e",
       alias: "",
       comments: "",
-      children: ["/a/e/f", "/a/e/g"],
+      children: [
+        FilesAndFolders.getIdByName("f", derived),
+        FilesAndFolders.getIdByName("g", derived)
+      ],
       size: 7,
       last_modified_max: 3,
       last_modified_list: [2, 3],
@@ -168,10 +283,10 @@ describe("files-and-folders", function() {
       depth: 2,
       nb_files: 2,
       sort_by_size_index: [1, 0],
-      sort_by_date_index: [1, 0]
-    });
+      sort_by_date_index: [1, 0],
+    })
 
-    test(derived.get("/a/e/f"), updater, {
+    test({
       name: "f",
       alias: "",
       comments: "",
@@ -185,10 +300,10 @@ describe("files-and-folders", function() {
       depth: 3,
       nb_files: 1,
       sort_by_size_index: [],
-      sort_by_date_index: []
-    });
+      sort_by_date_index: [],
+    })
 
-    test(derived.get("/a/e/g"), updater, {
+    test({
       name: "g",
       alias: "",
       comments: "",
@@ -202,7 +317,9 @@ describe("files-and-folders", function() {
       depth: 3,
       nb_files: 1,
       sort_by_size_index: [],
-      sort_by_date_index: []
-    });
+      sort_by_date_index: [],
+    })
+
+
   });
 });

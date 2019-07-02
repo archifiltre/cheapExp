@@ -1,4 +1,3 @@
-
 import * as Arbitrary from "test/arbitrary";
 import { OriginFileElem } from "datastore/origin-file-elem";
 
@@ -40,11 +39,22 @@ const forEach = (callback, a) => {
   a.forEach(callback);
 };
 
+const toJs = (a) => {
+  return a;
+}
+
+const fromJs = (a) => {
+  return a;
+}
+
 export const Origin = {
   empty,
   push,
   sort,
   forEach,
   arbitrary,
+
+  toJs,
+  fromJs,
 }
 
