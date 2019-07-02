@@ -138,7 +138,7 @@ const update = (ffs, tags) => {
 
 
 const toNameList = (tags) => {
-  return tags.map(Tag.getName).valueSeq().toArray();
+  return tags.map(Tag.getName).valueSeq().toArray().sort();
 }
 
 const toStrList2 = (ff_id_list, ffs, tags) => {

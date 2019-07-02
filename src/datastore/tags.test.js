@@ -10,6 +10,41 @@ import { Origin } from "datastore/origin";
 import { Set } from "immutable";
 
 describe("tags", function() {
+  it("simple toStrList2 test", () => {
+    const origin = Origin.fromJs([
+      [{ size: 1, last_modified: 5 }, "/a/b/c"],
+      [{ size: 2, last_modified: 4 }, "/a/b/d"],
+      [{ size: 3, last_modified: 3 }, "/a/e/f"],
+      [{ size: 4, last_modified: 2 }, "/a/e/g"],
+      [{ size: 5, last_modified: 1 }, "/h"]
+    ]);
+    const data = FilesAndFolders.fromOrigin(origin);
+    const derived = FilesAndFolders.computeDerived(data);
+
+    const f_id = FilesAndFolders.getIdByName("f", derived);
+    const e_id = FilesAndFolders.getIdByName("e", derived);
+    const h_id = FilesAndFolders.getIdByName("h", derived);
+    const a_id = FilesAndFolders.getIdByName("a", derived);
+
+    let tags = Tags.empty();
+
+    tags = Tags.push(Tag.create("T", Set.of(f_id, h_id)), tags);
+    tags = Tags.push(Tag.create("U", Set.of(e_id)), tags);
+    
+    tags = Tags.update(derived, tags);
+
+    const ids = [f_id, e_id, h_id, a_id];
+    const str_list_2 = Tags.toStrList2(ids, derived, tags);
+
+    expect(str_list_2).to.deep.equal([
+      ["tag0 : T", "tag1 : U"],
+      ["T", "U"],
+      ["", "U"],
+      ["T", ""],
+      ["", ""],
+    ]);
+  });
+
   it("simple derived data test", () => {
     const ffs = FilesAndFolders.computeDerived(
       FilesAndFolders.fromOrigin(Origin.fromJs([
