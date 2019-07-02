@@ -1,18 +1,20 @@
 import chai from "chai";
-const should = chai.should();
+const expect = chai.expect;
 
-import * as Loop from "test/loop";
+import { Quickcheck } from "test/quickcheck";
 import * as Arbitrary from "test/arbitrary";
 import * as M from "./color";
 
 describe("color", function() {
-  Loop.equal("(fromRgba . toRgba) a", () => {
+  Quickcheck.loop("(fromRgba . toRgba) a", () => {
     const a = M.arbitrary();
-    return [M.fromRgba(M.toRgba(a)), a];
+
+    expect(M.fromRgba(M.toRgba(a))).to.deep.equal(a);
   });
 
-  Loop.equal("(fromHex . toHex) a", () => {
+  Quickcheck.loop("(fromHex . toHex) a", () => {
     const a = M.arbitrary();
-    return [M.fromHex(M.toHex(a)), M.setAlpha(1, a)];
+
+    expect(M.fromHex(M.toHex(a))).to.deep.equal(M.setAlpha(1, a));
   });
 });

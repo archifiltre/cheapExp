@@ -48,7 +48,7 @@ const getIdByName = (name, tags) => {
   }, null);
 }
 
-const insert = (id, tag, tags) => {
+const insertAndHandleTagWithSameName = (id, tag, tags) => {
   const already_id = getIdByName(Tag.getName(tag), tags);
 
   if (already_id !== null) {
@@ -129,7 +129,10 @@ const computeDerived = (ffs, tags) => {
 };
 
 const update = (ffs, tags) => {
-  tags = tags.reduce((acc, val, id) => insert(id, val, acc), empty());
+  tags = tags.reduce(
+    (acc, val, id) => insertAndHandleTagWithSameName(id, val, acc),
+    empty()
+  );
   tags = tags.filter(val => Tag.getFfIds(val).size !== 0);
   tags = computeDerived(ffs, tags);
 
@@ -137,19 +140,19 @@ const update = (ffs, tags) => {
 };
 
 
-const toNameList = (tags) => {
+const toNameArray = (tags) => {
   return tags.map(Tag.getName).valueSeq().toArray().sort();
 }
 
 const toStrList2 = (ff_id_list, ffs, tags) => {
-  const name_list = toNameList(tags);
+  const name_list = toNameArray(tags);
   const header = name_list
     .map((tag_name,i) => "tag" + i + " : " + tag_name);
   const mapFfidToStrList = {};
 
   const rec = (parent_tag, curr_ff_id) => {
     const curr_ff = FilesAndFolders.getById(curr_ff_id, ffs);
-    let curr_ff_tags_name = toNameList(
+    let curr_ff_tags_name = toNameArray(
       tags.filter(tag => Tag.getFfIds(tag).includes(curr_ff_id))
     );
     curr_ff_tags_name = curr_ff_tags_name.concat(parent_tag);

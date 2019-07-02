@@ -25,6 +25,10 @@ const empty = () => {
   return a;
 }
 
+const numbreOfFileOrFolder = (a) => {
+  return a.size;
+}
+
 const getIdByName = (name, a) => {
   const ans = a.findEntry((elem, id) => {
     return FileOrFolder.getName(elem) === name

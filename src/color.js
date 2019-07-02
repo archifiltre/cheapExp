@@ -1,4 +1,3 @@
-import * as Loop from "test/loop";
 
 export const gradient = (a, b) => zero_to_one => {
   const ans = a
@@ -48,7 +47,6 @@ export const toHex = a => {
   return `#${a[0]}${a[1]}${a[2]}`;
 };
 export const fromHex = a => {
-  Loop.log(a, a.split(/#|([0-9a-f]{2})/).filter(a => a && a !== ""));
   a = a
     .split(/#|([0-9a-f]{2})/)
     .filter(a => a && a !== "")

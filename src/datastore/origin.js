@@ -13,7 +13,7 @@ const arbitrary = () => {
   const a = empty();
   const length = Arbitrary.index() + 1;
 
-  const shouldAddElem = (elem, a) => {
+  const elemIsCompatibleWithPrevElems = (elem, a) => {
     return a.reduce(
       (acc, val) => acc && OriginFileElem.canBeOnTheSameFileSystem(val, elem),
       true
@@ -23,7 +23,7 @@ const arbitrary = () => {
   while (a.length < length) {
     const origin_file_elem = OriginFileElem.arbitrary();
 
-    if (shouldAddElem(origin_file_elem, a)) {
+    if (elemIsCompatibleWithPrevElems(origin_file_elem, a)) {
       push(origin_file_elem, a);
     };
   }

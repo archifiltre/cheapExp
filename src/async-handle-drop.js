@@ -1,5 +1,5 @@
 import AsyncHandleDropWorker from "async-handle-drop.worker";
-import * as VirtualFileSystem from "datastore/virtual-file-system";
+import { VirtualFileSystem } from "datastore/virtual-file-system";
 
 export default (hook, dropped_folder_path) => {
   return new Promise((resolve, reject) => {

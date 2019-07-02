@@ -50,6 +50,8 @@ const canBeOnTheSameFileSystem = (a,b) => {
   const a_path = getPath(a);
   const b_path = getPath(b);
 
+  // Each OriginFileElem represent a file in a file system
+  // /a/b and /a/b/d can not be on the same file system
   if (a_path.length < b_path.length) {
     return a_path !== b_path.slice(0, a_path.length);
   } else {

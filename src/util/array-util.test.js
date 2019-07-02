@@ -1,17 +1,18 @@
 import chai from "chai";
-const should = chai.should();
+const expect = chai.expect;
 
-import * as Loop from "test/loop";
+import { Quickcheck } from "test/quickcheck";
 import * as Arbitrary from "test/arbitrary";
 import * as M from "util/array-util";
 
 describe("array-util", function() {
-  Loop.equal("(unzip . zip) a", () => {
+  Quickcheck.loop("(unzip . zip) a", () => {
     const index = () => 1 + Arbitrary.index();
     const i = index();
     const a = () => Arbitrary.arrayWithIndex(() => i)(Arbitrary.natural);
     const b = Arbitrary.arrayWithIndex(index)(a);
-    return [M.unzip(M.zip(b)), b];
+
+    expect(M.unzip(M.zip(b))).to.deep.equal(b);
   });
 
   it("join", () => {

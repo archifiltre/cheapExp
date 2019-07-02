@@ -88,6 +88,7 @@ function createWindow () {
   // Open the DevTools.
   if (!app.isPackaged) {
     win.webContents.openDevTools()
+    win.show()
   }
 
   if (app.isPackaged) {

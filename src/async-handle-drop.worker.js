@@ -1,6 +1,6 @@
 import { traverseFileTree, isJsonFile, readFileSync } from "traverse-file-tree";
 
-import * as VirtualFileSystem from "datastore/virtual-file-system";
+import { VirtualFileSystem } from "datastore/virtual-file-system";
 import { fromAnyJsonToJs } from "compatibility";
 
 import version from "version";
@@ -23,7 +23,7 @@ onmessage = function(e) {
 
     if (js_version !== version) {
       postMessage({ status: "derivate" });
-      vfs = VirtualFileSystem.derivate(vfs);
+      vfs = VirtualFileSystem.derive(vfs);
     }
 
     postMessage({
@@ -48,7 +48,7 @@ onmessage = function(e) {
     postMessage({ status: "make" });
     let vfs = VirtualFileSystem.make(origin, dropped_folder_path);
     postMessage({ status: "derivate" });
-    vfs = VirtualFileSystem.derivate(vfs);
+    vfs = VirtualFileSystem.derive(vfs);
 
     postMessage({
       status: "return",

@@ -4,9 +4,9 @@ import * as RealEstate from "reducers/real-estate";
 
 import * as Cache from "cache";
 import { Origin } from "datastore/origin";
-import * as VirtualFileSystem from "datastore/virtual-file-system";
-import * as FilesAndFolders from "datastore/files-and-folders";
-import * as Tags from "datastore/tags";
+import { VirtualFileSystem } from "datastore/virtual-file-system";
+import { FilesAndFolders } from "datastore/files-and-folders";
+import { Tags } from "datastore/tags";
 
 
 import * as SEDA from "seda";
@@ -17,21 +17,57 @@ const property_name = "database";
 
 const initialState = () => VirtualFileSystem.make(Origin.empty());
 
-const overallCount = () => state => state.get("files_and_folders").size;
+const overallCount = () => state => {
+  const ffs = VirtualFileSystem.getFilesAndFolders(state);
+  return FilesAndFolders.numbreOfFileOrFolder(ffs);
+};
 
-const fileCount = () => state =>
-  state.get("files_and_folders").filter(a => a.get("children").size === 0).size;
+const fileCount = () => state => {
+  let ffs = VirtualFileSystem.getFilesAndFolders(state);
 
-const getFfByFfId = id => state => state.get("files_and_folders").get(id);
-const rootFfId = () => state => "";
+  ffs = FilesAndFolders.filter(
+    a => FileOrFolder.getChildren(a).size === 0,
+    ffs
+  );
 
-const maxDepth = () => state =>
-  state
-    .get("files_and_folders")
-    .map(a => a.get("depth"))
-    .reduce((acc, val) => Math.max(acc, val), 0);
+  return FilesAndFolders.numbreOfFileOrFolder(ffs);
+  // state.get("files_and_folders").filter(a => a.get("children").size === 0).size;
+}
 
-const volume = () => state => getFfByFfId(rootFfId()())(state).get("size");
+const getFfByFfId = id => state => {
+  const ffs = VirtualFileSystem.getFilesAndFolders(state);
+ 
+  return FilesAndFolders.getById(id, ffs);
+  // state.get("files_and_folders").get(id);
+}
+const rootFfId = () => state => FilesAndFolders.rootId();
+
+const maxDepth = () => state => {
+  const ffs = VirtualFileSystem.getFilesAndFolders(state);
+
+  const max_depth = FilesAndFolders.reduce(
+    (acc, val) => Math.max(acc, FileOrFolder.getDepth(val)),
+    0
+  );
+
+  return max_depth;
+  // state
+  //   .get("files_and_folders")
+  //   .map(a => a.get("depth"))
+  //   .reduce((acc, val) => Math.max(acc, val), 0);
+}
+
+const volume = () => state => {
+  const ffs = VirtualFileSystem.getFilesAndFolders(state);
+
+  const root_id = FilesAndFolders.rootId();
+  const root_node = FilesAndFolders.getById(root_id, ffs);
+  const vol = FileOrFolder.getSize(root_node);
+
+  return vol;
+
+  // getFfByFfId(rootFfId()())(state).get("size");
+}
 
 const getFfIdPath = id => state =>
   List(
@@ -47,41 +83,56 @@ const toJson = () => state => JSON.stringify(VirtualFileSystem.toJs(state));
 
 
 const toStrList2 = () => state => {
-  const files_and_folders = state.get("files_and_folders");
-  const root_id = FilesAndFolders.getFfRootId();
-  const ff_id_list = FilesAndFolders.toFfidList(files_and_folders).filter(a=>a!=root_id);
-  const tags = state.get("tags");
+  const ffs = VirtualFileSystem.getFilesAndFolders(state);
+  const root_id = FilesAndFolders.rootId();
+  const ff_id_list = FilesAndFolders.toIdArray(ffs).filter(a=>a!==root_id);
+  const tags = VirtualFileSystem.getTags(state);
 
-  const ans = FilesAndFolders.toStrList2(ff_id_list, files_and_folders);
+  const ans = FilesAndFolders.toStrList2(ff_id_list, ffs);
 
-  Tags.toStrList2(ff_id_list, files_and_folders, tags).forEach((a,i) => {
+  Tags.toStrList2(ff_id_list, ffs, tags).forEach((a,i) => {
     ans[i] = ans[i].concat(a);
   });
-
 
   return ans;
 };
 
 const toSIP = () => SEDA.makeSIP;
 
-const getSessionName = () => state => state.get("session_name");
-const getOriginalPath = () => state => state.get("original_path");
+const getSessionName = () => state => VirtualFileSystem.getSessionName(state);
+const getOriginalPath = () => state => VirtualFileSystem.getOriginalPath(state);
 
-const getTagIdsByFfId = id => state =>
-  state
-    .get("tags")
-    .filter(tag => tag.get("ff_ids").includes(id))
-    .keySeq()
-    .toList();
-const getAllTagIds = () => state =>
-  state
-    .get("tags")
-    .keySeq()
-    .toList();
+const getTagIdsByFfId = id => state => {
+  let tags = VirtualFileSystem.getTags(state);
 
-const getTagByTagId = id => state => getIn(state, ["tags", id]);
+  tags = Tags.filter(a => Tag.getFfIds(a).includes(id));
 
-const getWaitingCounter = () => state => 0;
+  return Tags.toIdArray(tags);
+
+  // state
+  //   .get("tags")
+  //   .filter(tag => tag.get("ff_ids").includes(id))
+  //   .keySeq()
+  //   .toList();
+}
+const getAllTagIds = () => state => {
+  const tags = VirtualFileSystem.getTags(state);
+
+  return Tags.toIdArray(tags);
+
+  // state
+  //   .get("tags")
+  //   .keySeq()
+  //   .toList();
+}
+
+const getTagByTagId = id => state => {
+  const tags = VirtualFileSystem.getTags(state);
+  return Tags.getById(id, tags);
+  // getIn(state, ["tags", id]);
+}
+
+// const getWaitingCounter = () => state => 0;
 
 const reader = {
   overallCount,
@@ -99,7 +150,7 @@ const reader = {
   getTagIdsByFfId,
   getAllTagIds,
   getTagByTagId,
-  getWaitingCounter
+  // getWaitingCounter
 };
 
 const set = next_state => state => next_state;
@@ -122,25 +173,25 @@ const createTagged = (ff_id, name) => state => {
   state = state.update("tags", a =>
     Tags.push(Tags.create({ name, ff_ids: Set.of(ff_id) }), a)
   );
-  state = VirtualFileSystem.derivateTags(state);
+  state = VirtualFileSystem.deriveTags(state);
   return state;
 };
 
 const addTagged = (ff_id, tag_id) => state => {
   state = updateIn(state, ["tags", tag_id, "ff_ids"], a => a.add(ff_id));
-  state = VirtualFileSystem.derivateTags(state);
+  state = VirtualFileSystem.deriveTags(state);
   return state;
 };
 
 const deleteTagged = (ff_id, tag_id) => state => {
   state = updateIn(state, ["tags", tag_id, "ff_ids"], a => a.delete(ff_id));
-  state = VirtualFileSystem.derivateTags(state);
+  state = VirtualFileSystem.deriveTags(state);
   return state;
 };
 
 const renameTag = (name, tag_id) => state => {
   state = updateIn(state, ["tags", tag_id, "name"], () => name);
-  state = VirtualFileSystem.derivateTags(state);
+  state = VirtualFileSystem.deriveTags(state);
   return state;
 };
 

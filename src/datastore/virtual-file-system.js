@@ -1,16 +1,31 @@
 import version from "version";
 
-import * as ObjectUtil from "util/object-util";
-import * as FilesAndFolders from "datastore/files-and-folders";
-import * as Tags from "datastore/tags";
+import { FilesAndFolders } from "datastore/files-and-folders";
+import { Tags } from "datastore/tags";
 import { Record } from "immutable";
 
 if (isNaN(version) || typeof version !== "number") {
   throw new Error("version is not a number");
 }
 
+const accessors = (name) => {
+  const get = (a) => a.get(name);
+  const set = (b, a) => a.set(name, b);
+  const update = (f, a) => set(f(get(a)), a);
+  return [get, set, update];
+}
 
-const virtualFileSystem = Record({
+const [getSessionName, setSessionName] = accessors("session_name");
+const [getOriginalPath, setOriginalPath] = accessors("original_path");
+const [getVersion, setVersion] = accessors("version");
+const [
+  getFilesAndFolders,
+  setFilesAndFolders,
+  updateFilesAndFolders
+] = accessors("files_and_folders");
+const [getTags, setTags, updateTags] = accessors("tags");
+
+const recordFactory = Record({
   session_name: "Untitled",
   original_path: "",
   version,
@@ -18,39 +33,70 @@ const virtualFileSystem = Record({
   tags: Tags.empty()
 });
 
-export const toJs = (a) => {
+
+
+
+const empty = () => {
+  return recordFactory();
+};
+
+
+const toJs = (a) => {
   return {
-    session_name: a.get("session_name"),
-    original_path: a.get("original_path"),
-    version: a.get("version"),
-    files_and_folders: FilesAndFolders.toJs(a.get("files_and_folders")),
-    tags: Tags.toJs(a.get("tags"))
+    session_name: getSessionName(a),
+    original_path: getOriginalPath(a),
+    version: getVersion(a),
+    files_and_folders: FilesAndFolders.toJs(getFilesAndFolders(a)),
+    tags: Tags.toJs(getTags(a)),
   }
-};
+}
 
-export const fromJs = (a) => {
-  return virtualFileSystem({
-    session_name: a.session_name,
-    original_path: a.original_path,
-    version: a.version,
-    files_and_folders: FilesAndFolders.fromJs(a.files_and_folders),
-    tags: Tags.fromJs(a.tags)
-  });
-};
+const fromJs = (a) => {
+  let ans = empty();
+
+  ans = setSessionName(a.session_name, ans);
+  ans = setOriginalPath(a.original_path, ans);
+  ans = setVersion(a.version, ans);
+  ans = setFilesAndFolders(FilesAndFolders.fromJs(a.files_and_folders), ans);
+  ans = setTags(Tags.fromJs(a.tags), ans);
+
+  return ans;
+}
 
 
-export const make = (origin, path) =>
-  virtualFileSystem({
-    files_and_folders: FilesAndFolders.ff(origin),
-    original_path: path
-  });
+const make = (origin, path) => {
+  let ans = empty();
 
-export const derivateTags = vfs =>
-  vfs.update("tags", tags => Tags.update(vfs.get("files_and_folders"), tags));
+  ans = setFilesAndFolders(FilesAndFolders.fromOrigin(origin), ans);
+  ans = setOriginalPath(path, ans);
 
-export const derivateFilesAndFolders = vfs =>
-  vfs.update("files_and_folders", FilesAndFolders.computeDerived);
+  return ans;
+}
 
-export const derivate = vfs => derivateTags(derivateFilesAndFolders(vfs));
+const deriveTags = (vfs) => {
+  const ffs = getFilesAndFolders(vfs);
+  vfs = updateTags(tags => Tags.update(ffs, tags), vfs);
+  return vfs;
+}
+
+const deriveFilesAndFolders = (vfs) => {
+  return updateFilesAndFolders(FilesAndFolders.computeDerived, vfs);
+}
+
+const derive = (vfs) => {
+  return deriveTags(deriveFilesAndFolders(vfs));
+}
+
+export const VirtualFileSystem = {
+  toJs,
+  fromJs,
+
+  make,
+  derive,
+  deriveTags,
+}
+
+
+
 
 
