@@ -25,19 +25,79 @@ const empty = () => {
   return a;
 }
 
+
+const toIdArray = a => a.keySeq().toArray();
+
+const arbitrary = () => {
+  let ans = empty();
+
+  const num = Math.floor(Math.random() * 100);
+
+  Array(num).fill().forEach(() => {
+    const id = makeId();
+    const elem = FileOrFolder.arbitrary();
+
+    const id_array = toIdArray(ans);
+    const random_parent_id = id_array[id_array.length - 1];
+
+    ans = updateById(
+      random_parent_id,
+      a => FileOrFolder.pushToChildren(id, a),
+      ans
+    )
+
+    ans = setById(
+      id,
+      FileOrFolder.setParent(random_parent_id, elem),
+      ans,
+    );    
+  })
+
+  return ans;
+}
+
+
+
 const numbreOfFileOrFolder = (a) => {
   return a.size;
 }
 
-const getIdByName = (name, a) => {
-  const ans = a.findEntry((elem, id) => {
-    return FileOrFolder.getName(elem) === name
-  })
+const nameArrayToId = (name_array, ffs) => {
+  const removeRootName = a => a.slice(1)
+  name_array = removeRootName(name_array);
 
-  if (ans !== undefined) {
-    return ans[0];
+  let curr_id = rootId();
+  for (let i = 0; i < name_array.length; i++) {
+    const name = name_array[i]
+    const node = FilesAndFolders.getById(curr_id, ffs);
+    const children = FileOrFolder.getChildren(node);
+
+    const filtered_children = children.filter(id => {
+      const child = FilesAndFolders.getById(id, ffs);
+      const child_name = FileOrFolder.getName(child);
+      return child_name === name;
+    })
+
+    if (0 < filtered_children.size) {
+      const child_id = filtered_children.get(0);
+      curr_id = child_id;
+    } else {
+      curr_id = null;
+      break;
+    }
+  };
+  return curr_id;
+}
+
+const idToNameArray = (id, ffs) => {
+  const ff = getById(id, ffs);
+  const parent = FileOrFolder.getParent(ff);
+
+  if (parent === null) {
+    return [rootName()];
   } else {
-    return null;
+    const name = FileOrFolder.getName(ff);
+    return idToNameArray(parent, ffs).concat([name]);
   }
 }
 
@@ -53,19 +113,6 @@ const updateById = (id, f, a) => {
   return setById(id, f(getById(id, a)), a);
 }
 
-const toIdArray = a => a.keySeq().toArray();
-
-const arbitrary = () => {
-  return fromOrigin(Origin.arbitrary())
-    .map(a => {
-      a = FileOrFolder.setAlias(Arbitrary.string(), a);
-      a = FileOrFolder.setComments(Arbitrary.string(), a);
-
-      return a;
-    });
-}
-
-
 const toJs = (a) => {
   a = a.map(FileOrFolder.toJs);
   a = a.toObject();
@@ -78,26 +125,15 @@ const fromJs = (a) => {
   return a;
 }
 
-const computeNameArray = (id, ffs) => {
-  const ff = getById(id, ffs);
-  const parent = FileOrFolder.getParent(ff);
-
-  if (parent === null) {
-    return [rootName()];
-  } else {
-    const name = FileOrFolder.getName(ff);
-    return computeNameArray(parent, ffs).concat([name]);
-  }
-}
-
 const fromOrigin = (origin) => {
   let a = empty();
 
-  const addToFFsAndReturnItsId = (name, parent_id) => {
-    const id = getIdByName(name, a);
+  const addToFFsAndReturnItsId = (name_array, parent_id) => {
+    const id = nameArrayToId(name_array, a);
     if (id !== null) {
       return id;
     } else {
+      const name = name_array[name_array.length - 1];
       const elem = FileOrFolder.create(name, parent_id);
       const child_id = makeId();
       a = setById(child_id, elem, a);
@@ -109,16 +145,21 @@ const fromOrigin = (origin) => {
     }
   }
 
+
   Origin.forEach((elem) => {
     const path = OriginFileElem.getPath(elem);
     const file_size = OriginFileElem.getSize(elem);
     const file_last_modified = OriginFileElem.getLastModified(elem);
 
-    const names = path.split("/").slice(1);
+    const names = path.split("/");
 
     let parent_id = rootId();
     names.forEach((name, i) => {
-      parent_id = addToFFsAndReturnItsId(name, parent_id);
+      if (i === 0) {
+        return;
+      }
+      const name_array = names.slice(0, i + 1);
+      parent_id = addToFFsAndReturnItsId(name_array, parent_id);
     });
 
     let last_id = parent_id;
@@ -142,7 +183,7 @@ const toOrigin = (a) => {
     const name = FileOrFolder.getName(elem);
 
     if (children.size === 0) {
-      const path = names.join("/");
+      const path = names.concat([name]).join("/");
       const file_size = FileOrFolder.getFileSize(elem);
       const file_last_modified = FileOrFolder.getFileLastModified(elem);
 
@@ -154,7 +195,7 @@ const toOrigin = (a) => {
     }
   }
 
-  rec(rootId(), [rootName()]);
+  rec(rootId(), []);
 
   return origin;
 }
@@ -277,7 +318,7 @@ const toStrList2 = (ff_id_list, ffs) => {
     if (id === rootId()) {
       return undefined;
     }
-    const names = computeNameArray(id, ffs);
+    const names = idToNameArray(id, ffs);
     const platform_dependent_path = names.join(Path.sep);
     const path_length = platform_dependent_path.length;
     const name = FileOrFolder.getName(ff);
@@ -326,7 +367,7 @@ const toResipStrList2 = (ff_id_list, ffs) => {
       return undefined;
     }
 
-    const names = computeNameArray(id, ffs);
+    const names = idToNameArray(id, ffs);
     const platform_dependent_path = id.split("/").join("\\");
 
     const title = FileOrFolder.getName(ff);
@@ -362,12 +403,12 @@ export const FilesAndFolders = {
 
   toIdArray,
 
-  getIdByName,
   getById,
   updateById,
 
   computeDerived,
-  computeNameArray,
+  nameArrayToId,
+  idToNameArray,
 
   toOrigin,
   fromOrigin,

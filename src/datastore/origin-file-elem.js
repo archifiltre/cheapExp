@@ -33,7 +33,7 @@ const create = (size, last_modified, path) => {
 const arbitrary = () => {
   const arbitraryPath = () => {
     const index = () => Arbitrary.index() + 1;
-    const value = () => "level"+Math.floor(Math.random() * 5);
+    const value = () => "level"+Math.floor(Math.random() * 3);
     return "/" + Arbitrary.arrayWithIndex(index)(value).join("/");
   };
 
@@ -59,7 +59,7 @@ const canBeOnTheSameFileSystem = (a,b) => {
   }
 }
 
-const compare = (a,b) => {
+const comparePath = (a,b) => {
   const a_path = getPath(a);
   const b_path = getPath(b);
 
@@ -77,7 +77,7 @@ export const OriginFileElem = {
   arbitrary,
   canBeOnTheSameFileSystem,
   create,
-  compare,
+  comparePath,
   getPath,
   getSize,
   getLastModified,

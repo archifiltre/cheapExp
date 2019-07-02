@@ -32,7 +32,8 @@ const arbitrary = () => {
 };
 
 const sort = (a) => {
-  a.sort(OriginFileElem.compare);
+  a.sort(OriginFileElem.comparePath);
+  return a;
 };
 
 const forEach = (callback, a) => {

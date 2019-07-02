@@ -6,8 +6,21 @@ import { FilesAndFolders } from "datastore/files-and-folders";
 import { FileOrFolder } from "datastore/file-or-folder";
 import { Origin } from "datastore/origin";
 
-describe("files-and-folders", function() {
-  Quickcheck.loop("(toOrigin . fromOrigin) a", () => {
+describe("files-and-folders", () => {
+  Quickcheck.loop("nameArrayToId . idToNameArray == identity", () => {
+    const a = FilesAndFolders.arbitrary();
+
+    const id_array = FilesAndFolders.toIdArray(a);
+    const rand_id = id_array[Math.floor(Math.random() * id_array.length)];
+
+    const name_array = FilesAndFolders.idToNameArray(rand_id, a);
+    const ans_id = FilesAndFolders.nameArrayToId(name_array, a);
+
+    expect(ans_id).to.equal(rand_id);
+  });
+
+
+  Quickcheck.loop("toOrigin . fromOrigin == identity", () => {
     const a = Origin.arbitrary();
     expect(
       Origin.sort(FilesAndFolders.toOrigin(FilesAndFolders.fromOrigin(a)))
@@ -16,7 +29,8 @@ describe("files-and-folders", function() {
     );
   });
 
-  Quickcheck.loop("(fromJs . toJs) a", () => {
+
+  Quickcheck.loop("fromJs . toJs == identity", () => {
     const a = FilesAndFolders.computeDerived(FilesAndFolders.arbitrary());
     expect(
       FilesAndFolders.fromJs(FilesAndFolders.toJs(a)).toJS()
@@ -25,7 +39,7 @@ describe("files-and-folders", function() {
     );
   });
 
-  Quickcheck.loop("(toOrigin . fromJs . toJs . computeDerived . fromOrigin) a", () => {
+  Quickcheck.loop("toOrigin . fromJs . toJs . computeDerived . fromOrigin == identity", () => {
     const a = Origin.arbitrary();
     expect(
       Origin.sort(FilesAndFolders.toOrigin(FilesAndFolders.fromJs(FilesAndFolders.toJs(FilesAndFolders.computeDerived(FilesAndFolders.fromOrigin(a)))))),
@@ -34,7 +48,7 @@ describe("files-and-folders", function() {
     );
   });
 
-  it("computeNameArray", () => {
+  it("idToNameArray", () => {
     const origin = Origin.fromJs([
       [{ size: 1, last_modified: 5 }, "/a/b/c"],
       [{ size: 2, last_modified: 4 }, "/a/b/d"],
@@ -46,18 +60,18 @@ describe("files-and-folders", function() {
 
     const root_name = FilesAndFolders.rootName();
 
-    const f_id = FilesAndFolders.getIdByName("f", data);
-    let names = FilesAndFolders.computeNameArray(f_id, data);
+    const f_id = FilesAndFolders.nameArrayToId([root_name, "a", "e", "f"], data);
+    let names = FilesAndFolders.idToNameArray(f_id, data);
 
     expect(names).to.deep.equal([root_name, "a", "e", "f"]);
 
-    const a_id = FilesAndFolders.getIdByName("a", data);
-    names = FilesAndFolders.computeNameArray(a_id, data);
+    const a_id = FilesAndFolders.nameArrayToId([root_name, "a"], data);
+    names = FilesAndFolders.idToNameArray(a_id, data);
 
     expect(names).to.deep.equal([root_name, "a"]);
 
-    const root_id = FilesAndFolders.getIdByName(FilesAndFolders.rootId(), data);
-    names = FilesAndFolders.computeNameArray(root_id, data);
+    const root_id = FilesAndFolders.nameArrayToId([root_name], data);
+    names = FilesAndFolders.idToNameArray(root_id, data);
 
     expect(names).to.deep.equal([root_name]);
   });
@@ -74,21 +88,23 @@ describe("files-and-folders", function() {
     const data = FilesAndFolders.fromOrigin(origin);
     let derived = FilesAndFolders.computeDerived(data);
 
-    const d_id = FilesAndFolders.getIdByName("d", derived);
+    const root_name = FilesAndFolders.rootName();
+
+    const d_id = FilesAndFolders.nameArrayToId([root_name, "a", "b", "d"], derived);
     derived = FilesAndFolders.updateById(
       d_id,
       a => FileOrFolder.setAlias("alias", a),
       derived
     );
 
-    const e_id = FilesAndFolders.getIdByName("e", derived);
+    const e_id = FilesAndFolders.nameArrayToId([root_name, "a", "e"], derived);
     derived = FilesAndFolders.updateById(
       e_id,
       a => FileOrFolder.setComments("comments", a),
       derived
     )
 
-    const h_id = FilesAndFolders.getIdByName("h.extension", derived);
+    const h_id = FilesAndFolders.nameArrayToId(["", "h.extension"], derived);
 
     const ids = [d_id, e_id, h_id];
     const str_list_2 = FilesAndFolders.toStrList2(ids, derived);
@@ -116,7 +132,10 @@ describe("files-and-folders", function() {
     const data = FilesAndFolders.fromOrigin(origin);
     const derived = FilesAndFolders.computeDerived(data);
 
+    const root_name = FilesAndFolders.rootName();
+
     const test = ({
+      name_array,
       name,
       alias,
       comments,
@@ -133,7 +152,7 @@ describe("files-and-folders", function() {
       sort_by_date_index,
     }) => {
       const a = FilesAndFolders.getById(
-        FilesAndFolders.getIdByName(name, derived),
+        FilesAndFolders.nameArrayToId(name_array, derived),
         derived
       );
 
@@ -159,12 +178,13 @@ describe("files-and-folders", function() {
     }
 
     test({
+      name_array: [root_name],
       name: "",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.getIdByName("a", derived),
-        FilesAndFolders.getIdByName("h", derived)
+        FilesAndFolders.nameArrayToId([root_name, "a"], derived),
+        FilesAndFolders.nameArrayToId([root_name, "h"], derived)
       ],
       size: 15,
       last_modified_max: 5,
@@ -180,6 +200,7 @@ describe("files-and-folders", function() {
 
 
     test({
+      name_array: [root_name, "h"],
       name: "h",
       alias: "",
       comments: "",
@@ -197,12 +218,13 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a"],
       name: "a",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.getIdByName("b", derived),
-        FilesAndFolders.getIdByName("e", derived)
+        FilesAndFolders.nameArrayToId([root_name, "a", "b"], derived),
+        FilesAndFolders.nameArrayToId([root_name, "a", "e"], derived)
       ],
       size: 10,
       last_modified_max: 5,
@@ -217,12 +239,13 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a", "b"],
       name: "b",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.getIdByName("c", derived),
-        FilesAndFolders.getIdByName("d", derived)
+        FilesAndFolders.nameArrayToId([root_name, "a", "b", "c"], derived),
+        FilesAndFolders.nameArrayToId([root_name, "a", "b", "d"], derived)
       ],
       size: 3,
       last_modified_max: 5,
@@ -237,6 +260,7 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a", "b", "c"],
       name: "c",
       alias: "",
       comments: "",
@@ -254,6 +278,7 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a", "b", "d"],
       name: "d",
       alias: "",
       comments: "",
@@ -271,12 +296,13 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a", "e"],
       name: "e",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.getIdByName("f", derived),
-        FilesAndFolders.getIdByName("g", derived)
+        FilesAndFolders.nameArrayToId([root_name, "a", "e", "f"], derived),
+        FilesAndFolders.nameArrayToId([root_name, "a", "e", "g"], derived)
       ],
       size: 7,
       last_modified_max: 3,
@@ -291,6 +317,7 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a", "e", "f"],
       name: "f",
       alias: "",
       comments: "",
@@ -308,6 +335,7 @@ describe("files-and-folders", function() {
     })
 
     test({
+      name_array: [root_name, "a", "e", "g"],
       name: "g",
       alias: "",
       comments: "",

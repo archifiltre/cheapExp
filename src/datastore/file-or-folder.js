@@ -1,4 +1,6 @@
 import { Record, List } from "immutable";
+import * as Arbitrary from "test/arbitrary";
+import { generateRandomString } from "random-gen";
 
 const accessors = (name) => {
   const get = (a) => a.get(name);
@@ -71,6 +73,19 @@ const create = (name, parent_id) => {
   return a;
 };
 
+const arbitrary = () => {
+  let a = empty();
+
+  a = FileOrFolder.setName(generateRandomString(40), a);
+  a = FileOrFolder.setAlias(Arbitrary.string(), a);
+  a = FileOrFolder.setComments(Arbitrary.string(), a);
+
+  a = FileOrFolder.setFileSize(Arbitrary.natural(), a);
+  a = FileOrFolder.setFileLastModified(Arbitrary.natural(), a);
+
+  return a;
+}
+
 const reinitDerivedData = (a) => {
   a = setSize(0, a);
   a = setLastModifiedMax(0, a);
@@ -139,17 +154,21 @@ export const FileOrFolder = {
   empty,
   create,
 
+  arbitrary,
+
   toJs,
   fromJs,
 
   reinitDerivedData,
 
   getName,
+  setName,
   
   getChildren,
   pushToChildren,
 
   getParent,
+  setParent,
 
   setFileSize,
   getFileSize,
