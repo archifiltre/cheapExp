@@ -33,7 +33,7 @@ const create = (size, last_modified, path) => {
 const arbitrary = () => {
   const arbitraryPath = () => {
     const index = () => Arbitrary.index() + 1;
-    const value = () => "level"+Math.floor(Math.random() * 3);
+    const value = () => "level"+Math.floor(Math.random() * 5);
     return "/" + Arbitrary.arrayWithIndex(index)(value).join("/");
   };
 

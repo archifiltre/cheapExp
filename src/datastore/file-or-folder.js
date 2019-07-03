@@ -5,12 +5,13 @@ import { generateRandomString } from "random-gen";
 const accessors = (name) => {
   const get = (a) => a.get(name);
   const set = (b, a) => a.set(name, b);
-  return [get, set];
+  const update = (f, a) => set(f(get(a)), a);
+  return [get, set, update];
 }
 
 const [getName, setName] = accessors("name");
-const [getAlias, setAlias] = accessors("alias");
-const [getComments, setComments] = accessors("comments");
+const [getAlias, setAlias, updateAlias] = accessors("alias");
+const [getComments, setComments, updateComments] = accessors("comments");
 const [getChildren, setChildren] = accessors("children");
 const pushToChildren = (id, a) => {
   return setChildren(getChildren(a).push(id), a);
@@ -178,9 +179,11 @@ export const FileOrFolder = {
 
   setAlias,
   getAlias,
+  updateAlias,
   
   setComments,
   getComments,
+  updateComments,
 
   setDepth,
   getDepth,

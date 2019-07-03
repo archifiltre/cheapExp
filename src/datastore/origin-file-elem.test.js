@@ -3,7 +3,7 @@ const expect = chai.expect;
 
 import { OriginFileElem } from "datastore/origin-file-elem"
 
-describe("origin-file-elem", function() {
+describe("origin-file-elem", () => {
   it("canBeOnTheSameFileSystem", () => {
     const a_path = "/level0/level1"
     const b_path = "/level0/level1/level2"

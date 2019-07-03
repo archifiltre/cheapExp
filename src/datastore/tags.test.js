@@ -10,6 +10,16 @@ import { Origin } from "datastore/origin";
 import { Set } from "immutable";
 
 describe("tags", function() {
+
+  Quickcheck.loop("fromJs . toJs == identity", () => {
+    const a = Tags.arbitrary();
+    expect(
+      Tags.fromJs(Tags.toJs(a)).toJS()
+    ).to.deep.equal(
+      a.toJS()
+    );
+  });
+
   it("simple toStrList2 test", () => {
     const origin = Origin.fromJs([
       [{ size: 1, last_modified: 5 }, "/a/b/c"],
@@ -21,10 +31,10 @@ describe("tags", function() {
     const data = FilesAndFolders.fromOrigin(origin);
     const derived = FilesAndFolders.computeDerived(data);
 
-    const f_id = FilesAndFolders.getIdByName("f", derived);
-    const e_id = FilesAndFolders.getIdByName("e", derived);
-    const h_id = FilesAndFolders.getIdByName("h", derived);
-    const a_id = FilesAndFolders.getIdByName("a", derived);
+    const f_id = FilesAndFolders.nameArrayToId(["", "a", "e", "f"], derived);
+    const e_id = FilesAndFolders.nameArrayToId(["", "a", "e"], derived);
+    const h_id = FilesAndFolders.nameArrayToId(["", "h"], derived);
+    const a_id = FilesAndFolders.nameArrayToId(["", "a"], derived);
 
     let tags = Tags.empty();
 
@@ -55,10 +65,10 @@ describe("tags", function() {
       ]))
     );
 
-    const b_id = FilesAndFolders.getIdByName("b", ffs);
-    const d_id = FilesAndFolders.getIdByName("d", ffs);
-    const e_id = FilesAndFolders.getIdByName("e", ffs);
-    const g_id = FilesAndFolders.getIdByName("g", ffs);
+    const b_id = FilesAndFolders.pathToId("/a/b", ffs);
+    const d_id = FilesAndFolders.pathToId("/a/b/d", ffs);
+    const e_id = FilesAndFolders.pathToId("/a/e", ffs);
+    const g_id = FilesAndFolders.pathToId("/a/f/g", ffs);
 
     let tags = Tags.empty();
     tags = Tags.update(ffs, tags);

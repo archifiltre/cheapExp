@@ -1,6 +1,7 @@
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const webpack = require("webpack");
 
 const env = process.env.NODE_ENV;
@@ -14,12 +15,12 @@ module.exports = (env, argv) => ({
   },
 
   plugins: [
+    new CleanWebpackPlugin(),
     new CopyWebpackPlugin(["static"]),
     new HtmlWebpackPlugin({
       inject: "head",
       filename: "index.html",
-      template: "static/index.html",
-      excludeChunks: ["stats"]
+      template: "static/index.html"
     }),
     new webpack.DefinePlugin({
       MODE: JSON.stringify(argv.mode)

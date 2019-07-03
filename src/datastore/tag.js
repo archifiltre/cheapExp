@@ -1,4 +1,8 @@
 import { Record, Set } from "immutable";
+import * as Arbitrary from "test/arbitrary";
+
+import { FilesAndFolders } from "datastore/files-and-folders";
+
 
 const accessors = (name) => {
   const get = (a) => a.get(name);
@@ -33,6 +37,18 @@ const create = (name, ff_ids) => {
   return a;
 };
 
+const arbitrary = () => {
+  let a = empty();
+
+  a = setName(Arbitrary.string(), a);
+  const ff_ids = Arbitrary.arrayWithIndex(Arbitrary.index)(FilesAndFolders.makeId);
+  a = setFfIds(Set(ff_ids), a);
+
+  a = setSize(Arbitrary.natural(), a);
+
+  return a;
+};
+
 
 const toJs = (a) => {
   return {
@@ -47,7 +63,7 @@ const fromJs = (a) => {
   let ans = empty();
 
   ans = setName(a.name, ans);
-  ans = setFfIds(a.ff_ids, ans);
+  ans = setFfIds(Set(a.ff_ids), ans);
 
   ans = setSize(a.size, ans);
 
@@ -56,11 +72,14 @@ const fromJs = (a) => {
 
 export const Tag = {
   create,
+  arbitrary,
+
   toJs,
   fromJs,
 
   getName,
-  
+  setName,
+
   getFfIds,
   setFfIds,
   updateFfIds,

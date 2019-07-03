@@ -18,6 +18,18 @@ const empty = () => {
   return Map()
 };
 
+const arbitrary = () => {
+  let a = empty();
+
+  const size = Math.floor(Math.random() * 100);
+
+  Array(size).fill().forEach(() => {
+    a = push(Tag.arbitrary(), a);
+  });
+
+  return a;
+};
+
 const toJs = (a) => {
   a = a.map(Tag.toJs);
   a = a.toObject();
@@ -32,11 +44,25 @@ const fromJs = (a) => {
   return a;
 }
 
+const toIdArray = a => a.keySeq().toArray()
+
 const getById = (id, tags) => {
   return tags.get(id);
 }
 
-const push = (tag, tags) => tags.set(makeId(), tag);
+const setById = (id, tag, tags) => {
+  return tags.set(id, tag);
+}
+
+const deleteById = (id, tags) => {
+  return tags.delete(id);
+}
+
+const updateById = (id, f, tags) => {
+  return setById(id, f(getById(id, tags)), tags);
+}
+
+const push = (tag, tags) => setById(makeId(), tag, tags);
 
 
 const getIdByName = (name, tags) => {
@@ -48,6 +74,12 @@ const getIdByName = (name, tags) => {
   }, null);
 }
 
+const getIdArrayByFfId = (ff_id, tags) => {
+  tags = tags.filter(a => Tag.getFfIds(a).includes(ff_id));
+
+  return toIdArray(tags);
+}
+
 const insertAndHandleTagWithSameName = (id, tag, tags) => {
   const already_id = getIdByName(Tag.getName(tag), tags);
 
@@ -57,7 +89,7 @@ const insertAndHandleTagWithSameName = (id, tag, tags) => {
       a => Tag.updateFfIds(ff_ids => ff_ids.concat(Tag.getFfIds(tag)), a)
     );
   } else {
-    tags = tags.set(id, tag);
+    tags = setById(id, tag, tags);
   }
   return tags;
 };
@@ -180,10 +212,17 @@ const toStrList2 = (ff_id_list, ffs, tags) => {
 
 export const Tags = {
   empty,
+  arbitrary,
+  
   push,
 
   getIdByName,
   getById,
+  updateById,
+  deleteById,
+
+  getIdArrayByFfId,
+  toIdArray,
 
   toJs,
   fromJs,

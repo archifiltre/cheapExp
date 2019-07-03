@@ -72,7 +72,7 @@ class AllTags extends React.Component {
     const stopEditingTag = this.stopEditingTag;
 
     const component_style = {
-      opacity: tag_ids.size > 0 ? 1 : 0.5,
+      opacity: tag_ids.length > 0 ? 1 : 0.5,
       background: "white",
       height: "100%",
       borderRadius: "1em",
@@ -101,8 +101,9 @@ class AllTags extends React.Component {
       }
     };
 
+
     // Dummy display for when there aren't any tags yet
-    if (tag_ids.size === 0) {
+    if (tag_ids.length === 0) {
       tags_content = (
         <div
           className="grid-y grid-frame align-center"

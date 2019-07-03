@@ -88,6 +88,16 @@ const derive = (vfs) => {
 }
 
 export const VirtualFileSystem = {
+  getSessionName,
+  setSessionName,
+
+  getOriginalPath,
+  getFilesAndFolders,
+  updateFilesAndFolders,
+
+  getTags,
+  updateTags,
+
   toJs,
   fromJs,
 

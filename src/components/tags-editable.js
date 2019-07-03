@@ -92,7 +92,7 @@ export default class TagsEditable extends React.Component {
       );
 
       ans = [...elements, input_box];
-    } else if (tag_ids.size > 0) {
+    } else if (tag_ids.length > 0) {
       const elements = tagIdsToElements();
       ans = elements;
     } else {

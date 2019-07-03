@@ -1,7 +1,6 @@
 import { List } from "immutable";
 
 import * as Arbitrary from "test/arbitrary";
-import * as Loop from "test/loop";
 
 const arbitrary = () =>
   Arbitrary.immutableList(() => Arbitrary.immutableList(Arbitrary.string));

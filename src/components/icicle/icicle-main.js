@@ -173,7 +173,7 @@ export default class IcicleMain extends PureComponent {
   }
 
   nodeSequence(id) {
-    return this.props.getFfIdPath(id).toJS();
+    return this.props.getFfIdPath(id);
   }
 
   onIcicleRectClickHandler(props, event) {

@@ -8,14 +8,6 @@ import CommentsCell from "components/report-cell-comments";
 
 import { makeSizeString, octet2HumanReadableFormat } from "components/ruler";
 
-import {
-  edit_hover_container,
-  edit_hover_pencil,
-  editable_text,
-  element_name,
-  bold
-} from "css/app.css";
-
 import LastModifiedReporter from "components/last-modified-reporter";
 
 import * as Color from "color";
@@ -91,7 +83,7 @@ const Name = props => {
     return <div style={{ fontWeight: "bold" }}>{folder_of_name_tr}</div>;
   } else {
     return (
-      <span className={edit_hover_container} style={margin_padding_compensate}>
+      <span className={"edit_hover_container"} style={margin_padding_compensate}>
         <RIEInput
           value={display_name.length > 0 ? display_name : bracket_name}
           change={props.onChangeAlias(
@@ -99,12 +91,12 @@ const Name = props => {
             props.node_id,
             n_name
           )}
-          className={editable_text + " " + element_name + " " + bold}
+          className={"editable_text" + " " + "element_name" + " " + "bold"}
           propName="new_display_name"
         />
         &ensp;
         <i
-          className={"fi-pencil " + edit_hover_pencil}
+          className={"fi-pencil " + "edit_hover_pencil"}
           style={{ opacity: "0.3" }}
         />
       </span>

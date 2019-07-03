@@ -1,7 +1,5 @@
 import React from "react";
 
-import { tags, tags_count } from "css/app.css";
-
 import BTRButton from "components/back-to-root-button";
 import ToggleChangeSkin from "components/toggle-change-skin";
 

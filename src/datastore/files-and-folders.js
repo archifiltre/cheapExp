@@ -12,12 +12,9 @@ const Path = require("path");
 
 
 const makeId = () => generateRandomString(40);
-// const rootId = (() => {
-//   const id = makeId();
-//   return () => id;
-// })();
 const rootId = () => "";
 const rootName = () => "";
+const rootPath = () => "";
 
 const empty = () => {
   let a = Map();
@@ -58,9 +55,39 @@ const arbitrary = () => {
 
 
 
-const numbreOfFileOrFolder = (a) => {
+const numberOfFileOrFolder = (a) => {
+  const size_without_root = a.size - 1;
+  return size_without_root;
+}
+
+const numberOfFile = (a) => {
+  a = a.filter(a =>
+    FileOrFolder.getChildren(a).size === 0 &&
+    FileOrFolder.getName(a) !== rootName()
+  );
   return a.size;
 }
+
+const numberOfFolder = (a) => {
+  a = a.filter(a =>
+    FileOrFolder.getChildren(a).size !== 0 &&
+    FileOrFolder.getName(a) !== rootName()
+  );
+  return a.size;
+}
+
+const maxDepth = (a) => {
+  return a.reduce(
+    (acc, val) => Math.max(acc, FileOrFolder.getDepth(val)),
+    0
+  );
+}
+
+const totalSize = (a) => {
+  const root_node = getById(rootId(), a);
+  return FileOrFolder.getSize(root_node);
+}
+
 
 const nameArrayToId = (name_array, ffs) => {
   const removeRootName = a => a.slice(1)
@@ -89,16 +116,30 @@ const nameArrayToId = (name_array, ffs) => {
   return curr_id;
 }
 
-const idToNameArray = (id, ffs) => {
+const idToIdArray = (id, ffs) => {
   const ff = getById(id, ffs);
   const parent = FileOrFolder.getParent(ff);
 
   if (parent === null) {
-    return [rootName()];
+    return [rootId()];
   } else {
-    const name = FileOrFolder.getName(ff);
-    return idToNameArray(parent, ffs).concat([name]);
+    return idToIdArray(parent, ffs).concat([id]);
   }
+}
+
+const idToNameArray = (id, ffs) => {
+  return idToIdArray(id, ffs)
+    .map(id => FileOrFolder.getName(getById(id, ffs)))
+}
+
+const pathToId = (path, ffs) => {
+  const name_array = path.split("/");
+  return nameArrayToId(name_array, ffs);
+}
+
+const idToPath = (id, ffs) => {
+  const name_array = idToNameArray(id, ffs);
+  return name_array.join("/");
 }
 
 const getById = (id, a) => {
@@ -158,7 +199,9 @@ const fromOrigin = (origin) => {
       if (i === 0) {
         return;
       }
-      const name_array = names.slice(0, i + 1);
+      const from_zero = 0;
+      const to_i_included = i + 1;
+      const name_array = names.slice(from_zero, to_i_included);
       parent_id = addToFFsAndReturnItsId(name_array, parent_id);
     });
 
@@ -182,7 +225,7 @@ const toOrigin = (a) => {
     const children = FileOrFolder.getChildren(elem);
     const name = FileOrFolder.getName(elem);
 
-    if (children.size === 0) {
+    if (children.size === 0 && name !== rootName()) {
       const path = names.concat([name]).join("/");
       const file_size = FileOrFolder.getFileSize(elem);
       const file_last_modified = FileOrFolder.getFileLastModified(elem);
@@ -398,17 +441,32 @@ export const FilesAndFolders = {
   rootId,
   rootName,
 
+  makeId,
+
   empty,
   arbitrary,
 
+  numberOfFileOrFolder,
+  numberOfFile,
+  numberOfFolder,
+
   toIdArray,
+
+  maxDepth,
+  totalSize,
 
   getById,
   updateById,
 
   computeDerived,
+
   nameArrayToId,
   idToNameArray,
+
+  idToIdArray,
+
+  pathToId,
+  idToPath,
 
   toOrigin,
   fromOrigin,

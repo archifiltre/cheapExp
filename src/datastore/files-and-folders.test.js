@@ -19,6 +19,18 @@ describe("files-and-folders", () => {
     expect(ans_id).to.equal(rand_id);
   });
 
+  Quickcheck.loop("pathToId . idToPath == identity", () => {
+    const a = FilesAndFolders.arbitrary();
+
+    const id_array = FilesAndFolders.toIdArray(a);
+    const rand_id = id_array[Math.floor(Math.random() * id_array.length)];
+
+    const name_array = FilesAndFolders.idToPath(rand_id, a);
+    const ans_id = FilesAndFolders.pathToId(name_array, a);
+
+    expect(ans_id).to.equal(rand_id);
+  });
+
 
   Quickcheck.loop("toOrigin . fromOrigin == identity", () => {
     const a = Origin.arbitrary();
@@ -48,7 +60,48 @@ describe("files-and-folders", () => {
     );
   });
 
-  it("idToNameArray", () => {
+
+  Quickcheck.loop("(numberOfFile . fromOrigin) ori == Origin.length ori", () => {
+    const a = Origin.arbitrary();
+    expect(
+      FilesAndFolders.numberOfFile(FilesAndFolders.fromOrigin(a))
+    ).to.deep.equal(
+      Origin.length(a)
+    );
+  });
+
+  Quickcheck.loop("(numberOfFile a) + (numberOfFolder a) == numberOfFileOrFolder a", () => {
+    const a = FilesAndFolders.arbitrary();
+    expect(
+      FilesAndFolders.numberOfFile(a) + 
+      FilesAndFolders.numberOfFolder(a)
+    ).to.deep.equal(
+      FilesAndFolders.numberOfFileOrFolder(a)
+    );
+  });
+
+  Quickcheck.loop("totalSize ffs == Origin.totalSize ori", () => {
+    const ori = Origin.arbitrary();
+    const ffs = FilesAndFolders.computeDerived(FilesAndFolders.fromOrigin(ori));
+    expect(
+      FilesAndFolders.totalSize(ffs)
+    ).to.deep.equal(
+      Origin.totalSize(ori)
+    );
+  });
+
+  Quickcheck.loop("maxDepth ffs == Origin.maxDepth ori", () => {
+    const ori = Origin.arbitrary();
+    const ffs = FilesAndFolders.computeDerived(FilesAndFolders.fromOrigin(ori));
+    expect(
+      FilesAndFolders.maxDepth(ffs)
+    ).to.deep.equal(
+      Origin.maxDepth(ori)
+    );
+  });
+
+
+  it("simple idToNameArray test", () => {
     const origin = Origin.fromJs([
       [{ size: 1, last_modified: 5 }, "/a/b/c"],
       [{ size: 2, last_modified: 4 }, "/a/b/d"],
@@ -58,22 +111,20 @@ describe("files-and-folders", () => {
     ]);
     const data = FilesAndFolders.fromOrigin(origin);
 
-    const root_name = FilesAndFolders.rootName();
-
-    const f_id = FilesAndFolders.nameArrayToId([root_name, "a", "e", "f"], data);
+    const f_id = FilesAndFolders.nameArrayToId(["", "a", "e", "f"], data);
     let names = FilesAndFolders.idToNameArray(f_id, data);
 
-    expect(names).to.deep.equal([root_name, "a", "e", "f"]);
+    expect(names).to.deep.equal(["", "a", "e", "f"]);
 
-    const a_id = FilesAndFolders.nameArrayToId([root_name, "a"], data);
+    const a_id = FilesAndFolders.nameArrayToId(["", "a"], data);
     names = FilesAndFolders.idToNameArray(a_id, data);
 
-    expect(names).to.deep.equal([root_name, "a"]);
+    expect(names).to.deep.equal(["", "a"]);
 
-    const root_id = FilesAndFolders.nameArrayToId([root_name], data);
+    const root_id = FilesAndFolders.nameArrayToId([""], data);
     names = FilesAndFolders.idToNameArray(root_id, data);
 
-    expect(names).to.deep.equal([root_name]);
+    expect(names).to.deep.equal([""]);
   });
 
 
@@ -88,16 +139,14 @@ describe("files-and-folders", () => {
     const data = FilesAndFolders.fromOrigin(origin);
     let derived = FilesAndFolders.computeDerived(data);
 
-    const root_name = FilesAndFolders.rootName();
-
-    const d_id = FilesAndFolders.nameArrayToId([root_name, "a", "b", "d"], derived);
+    const d_id = FilesAndFolders.nameArrayToId(["", "a", "b", "d"], derived);
     derived = FilesAndFolders.updateById(
       d_id,
       a => FileOrFolder.setAlias("alias", a),
       derived
     );
 
-    const e_id = FilesAndFolders.nameArrayToId([root_name, "a", "e"], derived);
+    const e_id = FilesAndFolders.nameArrayToId(["", "a", "e"], derived);
     derived = FilesAndFolders.updateById(
       e_id,
       a => FileOrFolder.setComments("comments", a),
@@ -118,9 +167,6 @@ describe("files-and-folders", () => {
   });
 
 
-
-
-
   it("simple derived data test", () => {
     const origin = Origin.fromJs([
       [{ size: 1, last_modified: 5 }, "/a/b/c"],
@@ -132,7 +178,11 @@ describe("files-and-folders", () => {
     const data = FilesAndFolders.fromOrigin(origin);
     const derived = FilesAndFolders.computeDerived(data);
 
-    const root_name = FilesAndFolders.rootName();
+    expect(FilesAndFolders.numberOfFile(derived)).to.equal(5);
+    expect(FilesAndFolders.numberOfFolder(derived)).to.equal(3);
+    expect(FilesAndFolders.numberOfFileOrFolder(derived)).to.equal(8);
+    expect(FilesAndFolders.maxDepth(derived)).to.equal(3);
+
 
     const test = ({
       name_array,
@@ -178,13 +228,13 @@ describe("files-and-folders", () => {
     }
 
     test({
-      name_array: [root_name],
+      name_array: [""],
       name: "",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.nameArrayToId([root_name, "a"], derived),
-        FilesAndFolders.nameArrayToId([root_name, "h"], derived)
+        FilesAndFolders.nameArrayToId(["", "a"], derived),
+        FilesAndFolders.nameArrayToId(["", "h"], derived)
       ],
       size: 15,
       last_modified_max: 5,
@@ -200,7 +250,7 @@ describe("files-and-folders", () => {
 
 
     test({
-      name_array: [root_name, "h"],
+      name_array: ["", "h"],
       name: "h",
       alias: "",
       comments: "",
@@ -218,13 +268,13 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a"],
+      name_array: ["", "a"],
       name: "a",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.nameArrayToId([root_name, "a", "b"], derived),
-        FilesAndFolders.nameArrayToId([root_name, "a", "e"], derived)
+        FilesAndFolders.nameArrayToId(["", "a", "b"], derived),
+        FilesAndFolders.nameArrayToId(["", "a", "e"], derived)
       ],
       size: 10,
       last_modified_max: 5,
@@ -239,13 +289,13 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a", "b"],
+      name_array: ["", "a", "b"],
       name: "b",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.nameArrayToId([root_name, "a", "b", "c"], derived),
-        FilesAndFolders.nameArrayToId([root_name, "a", "b", "d"], derived)
+        FilesAndFolders.nameArrayToId(["", "a", "b", "c"], derived),
+        FilesAndFolders.nameArrayToId(["", "a", "b", "d"], derived)
       ],
       size: 3,
       last_modified_max: 5,
@@ -260,7 +310,7 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a", "b", "c"],
+      name_array: ["", "a", "b", "c"],
       name: "c",
       alias: "",
       comments: "",
@@ -278,7 +328,7 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a", "b", "d"],
+      name_array: ["", "a", "b", "d"],
       name: "d",
       alias: "",
       comments: "",
@@ -296,13 +346,13 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a", "e"],
+      name_array: ["", "a", "e"],
       name: "e",
       alias: "",
       comments: "",
       children: [
-        FilesAndFolders.nameArrayToId([root_name, "a", "e", "f"], derived),
-        FilesAndFolders.nameArrayToId([root_name, "a", "e", "g"], derived)
+        FilesAndFolders.nameArrayToId(["", "a", "e", "f"], derived),
+        FilesAndFolders.nameArrayToId(["", "a", "e", "g"], derived)
       ],
       size: 7,
       last_modified_max: 3,
@@ -317,7 +367,7 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a", "e", "f"],
+      name_array: ["", "a", "e", "f"],
       name: "f",
       alias: "",
       comments: "",
@@ -335,7 +385,7 @@ describe("files-and-folders", () => {
     })
 
     test({
-      name_array: [root_name, "a", "e", "g"],
+      name_array: ["", "a", "e", "g"],
       name: "g",
       alias: "",
       comments: "",
