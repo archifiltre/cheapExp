@@ -59,7 +59,7 @@ export default class ANewVersionIsAvailable extends React.PureComponent {
         const current_version = version;
 
         if (isNaN(last_version) === false && typeof last_version === "number") {
-          if (current_version !== last_version) {
+          if (current_version < last_version) {
             this.setState({
               display: true,
               last_version

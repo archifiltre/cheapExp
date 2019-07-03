@@ -23,7 +23,7 @@ export const fromAnyJsonToJs = json => {
       if (js === undefined) {
         js = JSON.parse(json);
       }
-      js = v10JsToV11Js(js);
+      js = v10JsToV10dot5Js(js);
     default:
       if (js === undefined) {
         js = JSON.parse(json);
@@ -177,11 +177,11 @@ const v9JsToV10Js = v9 => {
 };
 
 
-const v10JsToV11Js = v10 => {
-  const v11 = Object.assign({}, v10);
-  v11.version = 11;
+const v10JsToV10dot5Js = v10 => {
+  const v10dot5 = Object.assign({}, v10);
+  v10dot5.version = 11;
 
-  const ffs = v11.files_and_folders;
+  const ffs = v10dot5.files_and_folders;
 
   const depthFirstSearchRec = (parent_id, id) => {
     const children = ffs[id].children;
@@ -197,7 +197,7 @@ const v10JsToV11Js = v10 => {
   const root_id = "";
   depthFirstSearchRec(null, "");
 
-  return v11;
+  return v10dot5;
 };
 
 
