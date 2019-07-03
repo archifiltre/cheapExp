@@ -103,11 +103,11 @@ describe("files-and-folders", () => {
 
   it("simple idToNameArray test", () => {
     const origin = Origin.fromJs([
-      [{ size: 1, last_modified: 5 }, "/a/b/c"],
-      [{ size: 2, last_modified: 4 }, "/a/b/d"],
-      [{ size: 3, last_modified: 3 }, "/a/e/f"],
-      [{ size: 4, last_modified: 2 }, "/a/e/g"],
-      [{ size: 5, last_modified: 1 }, "/h"]
+      { size: 1, last_modified: 5, path: "/a/b/c" },
+      { size: 2, last_modified: 4, path: "/a/b/d" },
+      { size: 3, last_modified: 3, path: "/a/e/f" },
+      { size: 4, last_modified: 2, path: "/a/e/g" },
+      { size: 5, last_modified: 1, path: "/h" }
     ]);
     const data = FilesAndFolders.fromOrigin(origin);
 
@@ -130,11 +130,11 @@ describe("files-and-folders", () => {
 
   it("simple toStrList2 test", () => {
     const origin = Origin.fromJs([
-      [{ size: 1, last_modified: 5 }, "/a/b/c"],
-      [{ size: 2, last_modified: 4 }, "/a/b/d"],
-      [{ size: 3, last_modified: 3 }, "/a/e/f"],
-      [{ size: 4, last_modified: 2 }, "/a/e/g"],
-      [{ size: 5, last_modified: 1 }, "/h.extension"]
+      { size: 1, last_modified: 5, path: "/a/b/c" },
+      { size: 2, last_modified: 4, path: "/a/b/d" },
+      { size: 3, last_modified: 3, path: "/a/e/f" },
+      { size: 4, last_modified: 2, path: "/a/e/g" },
+      { size: 5, last_modified: 1, path: "/h.extension" }
     ]);
     const data = FilesAndFolders.fromOrigin(origin);
     let derived = FilesAndFolders.computeDerived(data);
@@ -169,11 +169,11 @@ describe("files-and-folders", () => {
 
   it("simple derived data test", () => {
     const origin = Origin.fromJs([
-      [{ size: 1, last_modified: 5 }, "/a/b/c"],
-      [{ size: 2, last_modified: 4 }, "/a/b/d"],
-      [{ size: 3, last_modified: 3 }, "/a/e/f"],
-      [{ size: 4, last_modified: 2 }, "/a/e/g"],
-      [{ size: 5, last_modified: 1 }, "/h"]
+      { size: 1, last_modified: 5, path: "/a/b/c" },
+      { size: 2, last_modified: 4, path: "/a/b/d" },
+      { size: 3, last_modified: 3, path: "/a/e/f" },
+      { size: 4, last_modified: 2, path: "/a/e/g" },
+      { size: 5, last_modified: 1, path: "/h" }
     ]);
     const data = FilesAndFolders.fromOrigin(origin);
     const derived = FilesAndFolders.computeDerived(data);

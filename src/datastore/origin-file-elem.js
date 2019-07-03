@@ -1,17 +1,28 @@
 import * as Arbitrary from "test/arbitrary";
 
 
-const setSize = (size, a) => a[0].size = size
-const getSize = (a) => a[0].size
+const setSize = (size, a) => a.size = size
+const getSize = (a) => a.size
 
-const setLastModified = (last_modified, a) => a[0].last_modified = last_modified
-const getLastModified = (a) => a[0].last_modified
+const setLastModified = (last_modified, a) => a.last_modified = last_modified
+const getLastModified = (a) => a.last_modified
 
-const setPath = (path, a) => a[1] = path
-const getPath = (a) => a[1]
+const setPath = (path, a) => a.path = path
+const getPath = (a) => a.path
+
+// const setSize = (size, a) => a[0].size = size
+// const getSize = (a) => a[0].size
+
+// const setLastModified = (last_modified, a) => a[0].last_modified = last_modified
+// const getLastModified = (a) => a[0].last_modified
+
+// const setPath = (path, a) => a[1] = path
+// const getPath = (a) => a[1]
+
 
 const empty = () => {
-  const a = [{}, undefined]
+  // const a = [{}, undefined];
+  const a = {};
 
   setSize(0, a);
   setLastModified(0, a);
@@ -57,7 +68,7 @@ const canBeOnTheSameFileSystem = (a,b) => {
   } else {
     return b_path !== a_path.slice(0, b_path.length);
   }
-}
+};
 
 const comparePath = (a,b) => {
   const a_path = getPath(a);
