@@ -19,6 +19,11 @@ export const fromAnyJsonToJs = json => {
         js = JSON.parse(json);
       }
       js = v9JsToV10Js(js);
+    case 10:
+      if (js === undefined) {
+        js = JSON.parse(json);
+      }
+      js = v10JsToV11Js(js);
     default:
       if (js === undefined) {
         js = JSON.parse(json);
@@ -65,7 +70,6 @@ const unzip3 = l => {
   );
 };
 
-// do not work, need to be debugged /////////////////////////
 const v8JsToV9Js = (v8) => {
   const v9 = Object.assign({},v8)
   v9.version = 9
@@ -171,3 +175,29 @@ const v9JsToV10Js = v9 => {
 
   return v10;
 };
+
+
+const v10JsToV11Js = v10 => {
+  const v11 = Object.assign({}, v10);
+  v11.version = 11;
+
+  const ffs = v11.files_and_folders;
+
+  const depthFirstSearchRec = (parent_id, id) => {
+    const children = ffs[id].children;
+    ffs[id].parent = parent_id;
+
+    if (children.length === 0) {
+      return;
+    } else {
+      children.forEach(child_id=>depthFirstSearchRec(id, child_id));
+    }
+  }
+
+  const root_id = "";
+  depthFirstSearchRec(null, "");
+
+  return v11;
+};
+
+
