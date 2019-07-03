@@ -176,13 +176,15 @@ const toNameArray = (tags) => {
   return tags.map(Tag.getName).valueSeq().toArray().sort();
 }
 
+
+// Parent tags are inherits by children
 const toStrList2 = (ff_id_list, ffs, tags) => {
   const name_list = toNameArray(tags);
   const header = name_list
     .map((tag_name,i) => "tag" + i + " : " + tag_name);
   const mapFfidToStrList = {};
 
-  const rec = (parent_tag, curr_ff_id) => {
+  const depthFirstSearchRec = (parent_tag, curr_ff_id) => {
     const curr_ff = FilesAndFolders.getById(curr_ff_id, ffs);
     let curr_ff_tags_name = toNameArray(
       tags.filter(tag => Tag.getFfIds(tag).includes(curr_ff_id))
@@ -199,11 +201,11 @@ const toStrList2 = (ff_id_list, ffs, tags) => {
 
     const curr_ff_children = FileOrFolder.getChildren(curr_ff);
     curr_ff_children.forEach((id) =>
-      rec(curr_ff_tags_name, id)
+      depthFirstSearchRec(curr_ff_tags_name, id)
     );
   }
 
-  rec([], FilesAndFolders.rootId());
+  depthFirstSearchRec([], FilesAndFolders.rootId());
 
   const ans = [header];
   ff_id_list.forEach(id=>ans.push(mapFfidToStrList[id]));

@@ -220,7 +220,7 @@ const fromOrigin = (origin) => {
 const toOrigin = (a) => {
   const origin = Origin.empty();
 
-  const rec = (id, names) => {
+  const depthFirstSearchRec = (id, names) => {
     const elem = getById(id, a);
     const children = FileOrFolder.getChildren(elem);
     const name = FileOrFolder.getName(elem);
@@ -234,11 +234,11 @@ const toOrigin = (a) => {
 
       Origin.push(ori_elem, origin);
     } else {
-      children.forEach((id) => rec(id, names.concat([name])));
+      children.forEach((id) => depthFirstSearchRec(id, names.concat([name])));
     }
   }
 
-  rec(rootId(), []);
+  depthFirstSearchRec(rootId(), []);
 
   return origin;
 }
@@ -250,7 +250,7 @@ const computeDerived = a => {
     a = a.map(FileOrFolder.reinitDerivedData);
   };
 
-  const rec = (id, depth) => {
+  const depthFirstSearchRec = (id, depth) => {
     let elem = getById(id, a);
     const children = FileOrFolder.getChildren(elem);
 
@@ -269,7 +269,7 @@ const computeDerived = a => {
       elem = FileOrFolder.setNbFiles(1, elem);
     } else {
       children.forEach((id) => {
-        rec(id, depth + 1);
+        depthFirstSearchRec(id, depth + 1);
       })
       let size = 0;
       let list = List();
@@ -311,7 +311,7 @@ const computeDerived = a => {
 
   removeOldDerivedData(a);
   const init_depth = 0;
-  rec(rootId(), init_depth);
+  depthFirstSearchRec(rootId(), init_depth);
 
   return a;
 }
