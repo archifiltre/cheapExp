@@ -117,7 +117,6 @@ const nameArrayToId = (name_array, ffs) => {
   return curr_id;
 }
 
-// TO RENAME ////////////
 const idToParentIdArray = (id, ffs) => {
   const ff = getById(id, ffs);
   const parent = FileOrFolder.getParent(ff);
@@ -168,8 +167,26 @@ const fromJs = (a) => {
   return a;
 }
 
+
+const nameArrayToIdCachedVersion = () => {
+  const map_path_to_id = {};
+
+  return (name_array, ffs) => {
+    const path = name_array.join("/");
+    if (
+      map_path_to_id[path] === undefined ||
+      map_path_to_id[path] === null
+    ) {
+      map_path_to_id[path] = nameArrayToId(name_array, ffs);
+    };
+    return map_path_to_id[path];
+  };
+};
+
 const fromOrigin = (origin) => {
   let a = empty();
+
+  const nameArrayToId = nameArrayToIdCachedVersion();
 
   const addToFFsAndReturnItsId = (name_array, parent_id) => {
     const id = nameArrayToId(name_array, a);

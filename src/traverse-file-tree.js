@@ -38,8 +38,6 @@ const recTraverseFileTree = (hook, dropped_folder_path, path, origin) => {
 export const traverseFileTree = (hook, dropped_folder_path) => {
   let origin = Origin.empty();
 
-  console.log(dropped_folder_path);
-
   recTraverseFileTree(
     hook,
     dropped_folder_path,

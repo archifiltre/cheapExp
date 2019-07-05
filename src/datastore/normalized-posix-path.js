@@ -1,4 +1,5 @@
 import * as Arbitrary from "test/arbitrary";
+import { generateRandomString } from "random-gen";
 
 const Path = require("path");
 const PathWin32 = Path.win32;
@@ -47,7 +48,8 @@ const arbitrary = () => {
 
 const arbitraryPosixPath = () => {
   const index = () => Arbitrary.index() + 1;
-  return Arbitrary.arrayWithIndex(index)(Arbitrary.string).join("/");
+  const string = () => generateRandomString(40);
+  return Arbitrary.arrayWithIndex(index)(string).join("/");
 }
 
 const isRootPath = a => {
