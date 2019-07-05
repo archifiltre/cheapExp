@@ -6,6 +6,7 @@ import { CSV } from "csv";
 import { generateRandomString } from "random-gen";
 import { OriginFileElem } from "datastore/origin-file-elem";
 import { FileOrFolder } from "datastore/file-or-folder";
+import { NormalizedPosixPath } from "datastore/normalized-posix-path";
 import pick from "languages";
 
 const Path = require("path");
@@ -116,19 +117,20 @@ const nameArrayToId = (name_array, ffs) => {
   return curr_id;
 }
 
-const idToIdArray = (id, ffs) => {
+// TO RENAME ////////////
+const idToParentIdArray = (id, ffs) => {
   const ff = getById(id, ffs);
   const parent = FileOrFolder.getParent(ff);
 
   if (parent === null) {
     return [rootId()];
   } else {
-    return idToIdArray(parent, ffs).concat([id]);
+    return idToParentIdArray(parent, ffs).concat([id]);
   }
 }
 
 const idToNameArray = (id, ffs) => {
-  return idToIdArray(id, ffs)
+  return idToParentIdArray(id, ffs)
     .map(id => FileOrFolder.getName(getById(id, ffs)))
 }
 
@@ -188,11 +190,11 @@ const fromOrigin = (origin) => {
 
 
   Origin.forEach((elem) => {
-    const path = OriginFileElem.getPath(elem);
+    const path = OriginFileElem.getNormalizedPosixPath(elem);
     const file_size = OriginFileElem.getSize(elem);
     const file_last_modified = OriginFileElem.getLastModified(elem);
 
-    const names = path.split("/");
+    const names = NormalizedPosixPath.toNameArray(path);
 
     let parent_id = rootId();
     names.forEach((name, i) => {
@@ -463,7 +465,7 @@ export const FilesAndFolders = {
   nameArrayToId,
   idToNameArray,
 
-  idToIdArray,
+  idToParentIdArray,
 
   pathToId,
   idToPath,

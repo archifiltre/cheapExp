@@ -48,7 +48,7 @@ const volume = () => state => {
 
 const getFfIdPath = id => state => {
   const ffs = VirtualFileSystem.getFilesAndFolders(state);
-  return FilesAndFolders.idToIdArray(id, ffs);
+  return FilesAndFolders.idToParentIdArray(id, ffs);
 }
 
 const toJson = () => state => JSON.stringify(VirtualFileSystem.toJs(state));

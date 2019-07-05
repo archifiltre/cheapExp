@@ -1,5 +1,6 @@
 import * as Arbitrary from "test/arbitrary";
 import { OriginFileElem } from "datastore/origin-file-elem";
+import { NormalizedPosixPath } from "datastore/normalized-posix-path";
 
 const empty = () => {
   return [];
@@ -19,7 +20,12 @@ const totalSize = (a) => {
 
 const maxDepth = (a) => {
   return a.reduce((acc, val) =>
-    Math.max(acc, OriginFileElem.getPath(val).split("/").length - 1),
+    Math.max(
+      acc,
+      NormalizedPosixPath.toNameArray(
+        OriginFileElem.getNormalizedPosixPath(val)
+      ).length - 1
+    ),
     0
   );
 }
